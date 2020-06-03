@@ -1,5 +1,8 @@
 
 from astropy.table import Table
+import os
+
+osjoin = os.path.join
 
 
 def read_casa_txt(filename):
@@ -70,3 +73,30 @@ def make_meta_dict(meta_lines):
         data_dict[name] = value
 
     return data_dict
+
+
+def read_field_data_tables(fieldname, inp_path):
+    '''
+    Read in a set of tables for a given `fieldname`. Note that this depends on the function:
+    https://github.com/e-koch/ReductionPipeline/blob/master/lband_pipeline/qa_plotting/qa_plot_tools.py#L311.
+    Because of this, the read-in is not generalized and may need to be updated.
+    '''
+
+    table_dict = dict()
+    meta_dict = dict()
+
+    # Table types:
+    tab_types = ["amp_chan", "amp_phase", "amp_time", "amp_uvdist", "phase_chan",
+                 "phase_time", "phase_uvdist"]
+    # Target fields will not have the phase tables.
+    # Cal fields should have all
+
+    for tab_type in tab_types:
+        tabname = osjoin(inp_path, f"field_{fieldname}_{tab_type}.txt")
+        if os.path.exists(tabname):
+            out = read_casa_txt(tabname)
+
+            table_dict[tab_type] = out[0]
+            meta_dict[tab_type] = out[1]
+
+    return table_dict, meta_dict
