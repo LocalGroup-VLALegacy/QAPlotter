@@ -49,91 +49,59 @@ def target_scan_figure(table_dict, meta_dict):
     '''
 
     # There should be 3 fields:
-    exp_keys = ['amp_chan', 'amp_time', 'amp_uvdist']
+    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1},
+                'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2},
+                'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3}}
 
     for key in exp_keys:
         if key not in table_dict.keys():
             raise KeyError(f"Required dict key {key} not found.")
 
-    # fig = make_subplots(rows=3, cols=1)
     fig = make_subplots(rows=1, cols=3)
 
 
     hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
-    # Amp vs. chan
-    ampchan_tab = table_dict['amp_chan']
+    spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
 
-    custom_data = np.vstack((ampchan_tab['scan'].tolist(),
-                             ampchan_tab['spw'].tolist(),
-                             ampchan_tab['chan'].tolist(),
-                             ampchan_tab['freq'].tolist(),
-                             ampchan_tab['corr'].tolist(),
-                             ampchan_tab['ant1name'].tolist(),
-                             ampchan_tab['ant2name'].tolist(),
-                             ampchan_tab['time'].tolist())).T
+    markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
 
-    fig.append_trace(go.Scattergl(x=ampchan_tab['freq'],
-                                  y=ampchan_tab['y'],
-                                  mode='markers',
-                                  marker=dict(size=16,
-                                              cmax=ampchan_tab['spw'].max(),
-                                              cmin=ampchan_tab['spw'].min(),
-                                              color=ampchan_tab['spw'],
-                                              colorscale=px.colors.qualitative.Safe),
-                                  customdata=custom_data,
-                                  hovertemplate=hovertemplate),
-                     row=1, col=1)
+    for nspw, spw in enumerate(spw_nums):
 
-    # Amp vs. time
-    amptime_tab = table_dict['amp_time']
+        for nn, key in enumerate(exp_keys):
 
-    custom_data = np.vstack((amptime_tab['scan'].tolist(),
-                             amptime_tab['spw'].tolist(),
-                             amptime_tab['chan'].tolist(),
-                             amptime_tab['freq'].tolist(),
-                             amptime_tab['corr'].tolist(),
-                             amptime_tab['ant1name'].tolist(),
-                             amptime_tab['ant2name'].tolist(),
-                             amptime_tab['time'].tolist())).T
+            tab_data = table_dict[key]
 
-    fig.append_trace(go.Scattergl(x=amptime_tab['time'],
-                                  y=amptime_tab['y'],
-                                  mode='markers',
-                                  marker=dict(size=16,
-                                              cmax=amptime_tab['spw'].max(),
-                                              cmin=amptime_tab['spw'].min(),
-                                              color=amptime_tab['spw'],
-                                              colorscale=px.colors.qualitative.Safe),
-                                  customdata=custom_data,
-                                  hovertemplate=hovertemplate),
-                     # row=2, col=1)
-                     row=1, col=2)
+            spw_mask = tab_data['spw'] == spw
 
-    # Amp vs. uvdist
-    ampuvdist_tab = table_dict['amp_uvdist']
+            corrs = np.unique(tab_data['corr'][spw_mask].tolist())
 
-    custom_data = np.vstack((ampuvdist_tab['scan'].tolist(),
-                             ampuvdist_tab['spw'].tolist(),
-                             ampuvdist_tab['chan'].tolist(),
-                             ampuvdist_tab['freq'].tolist(),
-                             ampuvdist_tab['corr'].tolist(),
-                             ampuvdist_tab['ant1name'].tolist(),
-                             ampuvdist_tab['ant2name'].tolist(),
-                             ampuvdist_tab['time'].tolist())).T
+            for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-    fig.append_trace(go.Scattergl(x=ampuvdist_tab['x'],
-                                  y=ampuvdist_tab['y'],
-                                  mode='markers',
-                                  marker=dict(size=16,
-                                              cmax=ampuvdist_tab['spw'].max(),
-                                              cmin=ampuvdist_tab['spw'].min(),
-                                              color=ampuvdist_tab['spw'],
-                                              colorscale=px.colors.qualitative.Safe),
-                                  customdata=custom_data,
-                                  hovertemplate=hovertemplate),
-                     # row=3, col=1)
-                     row=1, col=3)
+                corr_mask = (tab_data['corr'] == corr).tolist()
+
+                custom_data = np.vstack((tab_data['scan'][spw_mask & corr_mask].tolist(),
+                                         tab_data['spw'][spw_mask & corr_mask].tolist(),
+                                         tab_data['chan'][spw_mask & corr_mask].tolist(),
+                                         tab_data['freq'][spw_mask & corr_mask].tolist(),
+                                         tab_data['corr'][spw_mask & corr_mask].tolist(),
+                                         tab_data['ant1name'][spw_mask & corr_mask].tolist(),
+                                         tab_data['ant2name'][spw_mask & corr_mask].tolist(),
+                                         tab_data['time'][spw_mask & corr_mask].tolist())).T
+
+                fig.append_trace(go.Scattergl(x=tab_data[exp_keys[key]['x']][spw_mask & corr_mask],
+                                              y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
+                                              mode='markers',
+                                              marker=dict(symbol=marker,
+                                                          size=14,
+                                                          color=px.colors.qualitative.Safe[nspw % 11]),
+                                              customdata=custom_data,
+                                              hovertemplate=hovertemplate,
+                                              name=f"SPW {spw}",
+                                              legendgroup=str(spw),
+                                              showlegend=True if (nn == 0 and nc == 0) else False),
+                                 row=exp_keys[key]['row'], col=exp_keys[key]['col'],
+                                 )
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis2']['title'] = 'Time-MJD (s)'
@@ -142,6 +110,101 @@ def target_scan_figure(table_dict, meta_dict):
     fig['layout']['yaxis']['title'] = 'Amplitude'
     fig['layout']['yaxis2']['title'] = 'Amplitude'
     fig['layout']['yaxis3']['title'] = 'Amplitude'
+
+    meta = meta_dict['amp_time']
+
+    fig.update_layout(
+        title=f"Field: {meta['field']}<br>MS: {meta['vis']}",
+        font=dict(
+            family="Courier New, monospace",
+            size=15,
+            color="#7f7f7f")
+    )
+
+    fig.show()
+
+    return fig
+
+
+def calibrator_scan_figure(table_dict, meta_dict):
+    '''
+    Make a 7-panel figure for target scans.
+    '''
+
+    # There should be 7 fields:
+    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1},
+                'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2},
+                'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3},
+                'amp_phase': {'x': 'y', 'y': 'x', 'row': 1, 'col': 4},
+                'phase_chan': {'x': 'freq', 'y': 'y', 'row': 2, 'col': 1},
+                'phase_time': {'x': 'time', 'y': 'y', 'row': 2, 'col': 2},
+                'phase_uvdist': {'x': 'x', 'y': 'y', 'row': 2, 'col': 3}}
+
+    for key in exp_keys:
+        if key not in table_dict.keys():
+            raise KeyError(f"Required dict key {key} not found.")
+
+    fig = make_subplots(rows=2, cols=4)
+
+
+    hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
+
+    spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
+
+    markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
+
+    for nspw, spw in enumerate(spw_nums):
+
+        for nn, key in enumerate(exp_keys):
+
+            tab_data = table_dict[key]
+
+            spw_mask = tab_data['spw'] == spw
+
+            corrs = np.unique(tab_data['corr'][spw_mask].tolist())
+
+            for nc, (corr, marker) in enumerate(zip(corrs, markers)):
+
+                corr_mask = (tab_data['corr'] == corr).tolist()
+
+                custom_data = np.vstack((tab_data['scan'][spw_mask & corr_mask].tolist(),
+                                         tab_data['spw'][spw_mask & corr_mask].tolist(),
+                                         tab_data['chan'][spw_mask & corr_mask].tolist(),
+                                         tab_data['freq'][spw_mask & corr_mask].tolist(),
+                                         tab_data['corr'][spw_mask & corr_mask].tolist(),
+                                         tab_data['ant1name'][spw_mask & corr_mask].tolist(),
+                                         tab_data['ant2name'][spw_mask & corr_mask].tolist(),
+                                         tab_data['time'][spw_mask & corr_mask].tolist())).T
+
+                fig.append_trace(go.Scattergl(x=tab_data[exp_keys[key]['x']][spw_mask & corr_mask],
+                                              y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
+                                              mode='markers',
+                                              marker=dict(symbol=marker,
+                                                          size=14,
+                                                          color=px.colors.qualitative.Safe[nspw % 11]),
+                                              customdata=custom_data,
+                                              hovertemplate=hovertemplate,
+                                              name=f"SPW {spw}",
+                                              legendgroup=str(spw),
+                                              showlegend=True if (nn == 0 and nc == 0) else False),
+                                 row=exp_keys[key]['row'], col=exp_keys[key]['col'],
+                                 )
+
+    fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
+    fig['layout']['xaxis2']['title'] = 'Time-MJD (s)'
+    fig['layout']['xaxis3']['title'] = 'uv-distance (m)'
+    fig['layout']['xaxis4']['title'] = 'Phase'
+    fig['layout']['xaxis5']['title'] = 'Frequency (GHz)'
+    fig['layout']['xaxis6']['title'] = 'Time-MJD (s)'
+    fig['layout']['xaxis7']['title'] = 'uv-distance (m)'
+
+    fig['layout']['yaxis']['title'] = 'Amplitude'
+    fig['layout']['yaxis2']['title'] = 'Amplitude'
+    fig['layout']['yaxis3']['title'] = 'Amplitude'
+    fig['layout']['yaxis4']['title'] = 'Amplitude'
+    fig['layout']['yaxis5']['title'] = 'Phase'
+    fig['layout']['yaxis6']['title'] = 'Phase'
+    fig['layout']['yaxis7']['title'] = 'Phase'
 
     meta = meta_dict['amp_time']
 
