@@ -4,6 +4,8 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
 
+from .utils import vla_time_conversion
+
 
 def basic_scatter(tab, xvar='x', yvar='y', hover='ants',
                   colorvar='ant1', meta=None):
@@ -43,7 +45,8 @@ def basic_scatter(tab, xvar='x', yvar='y', hover='ants',
     fig.show()
 
 
-def target_scan_figure(table_dict, meta_dict, show=False):
+def target_scan_figure(table_dict, meta_dict, show=False,
+                       time_format='iso'):
     '''
     Make a 3-panel figure for target scans.
     '''
@@ -70,6 +73,15 @@ def target_scan_figure(table_dict, meta_dict, show=False):
 
         for nn, key in enumerate(exp_keys):
 
+            # Convert the time axis values to strings
+            # Time is always the x-axis.
+            if "time" in key:
+                def format_xvals(x):
+                    return vla_time_conversion(x)
+            else:
+                def format_xvals(x):
+                    return x
+
             tab_data = table_dict[key]
 
             spw_mask = tab_data['spw'] == spw
@@ -87,9 +99,9 @@ def target_scan_figure(table_dict, meta_dict, show=False):
                                          tab_data['corr'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant1name'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
-                                         tab_data['time'][spw_mask & corr_mask].tolist())).T
+                                         vla_time_conversion(tab_data['time'][spw_mask & corr_mask].tolist()))).T
 
-                fig.append_trace(go.Scattergl(x=tab_data[exp_keys[key]['x']][spw_mask & corr_mask],
+                fig.append_trace(go.Scattergl(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
                                               marker=dict(symbol=marker,
@@ -157,6 +169,15 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False):
 
         for nn, key in enumerate(exp_keys):
 
+            # Convert the time axis values to strings
+            # Time is always the x-axis.
+            if "time" in key:
+                def format_xvals(x):
+                    return vla_time_conversion(x)
+            else:
+                def format_xvals(x):
+                    return x
+
             tab_data = table_dict[key]
 
             spw_mask = tab_data['spw'] == spw
@@ -174,9 +195,9 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False):
                                          tab_data['corr'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant1name'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
-                                         tab_data['time'][spw_mask & corr_mask].tolist())).T
+                                         vla_time_conversion(tab_data['time'][spw_mask & corr_mask].tolist()))).T
 
-                fig.append_trace(go.Scattergl(x=tab_data[exp_keys[key]['x']][spw_mask & corr_mask],
+                fig.append_trace(go.Scattergl(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
                                               marker=dict(symbol=marker,
