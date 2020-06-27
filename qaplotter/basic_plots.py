@@ -43,7 +43,7 @@ def basic_scatter(tab, xvar='x', yvar='y', hover='ants',
     fig.show()
 
 
-def target_scan_figure(table_dict, meta_dict):
+def target_scan_figure(table_dict, meta_dict, show=False):
     '''
     Make a 3-panel figure for target scans.
     '''
@@ -115,18 +115,18 @@ def target_scan_figure(table_dict, meta_dict):
 
     fig.update_layout(
         title=f"Field: {meta['field']}<br>MS: {meta['vis']}",
-        font=dict(
-            family="Courier New, monospace",
-            size=15,
-            color="#7f7f7f")
+        font=dict(family="Courier New, monospace",
+                  size=15,
+                  color="#7f7f7f")
     )
 
-    fig.show()
+    if show:
+        fig.show()
 
     return fig
 
 
-def calibrator_scan_figure(table_dict, meta_dict):
+def calibrator_scan_figure(table_dict, meta_dict, show=False):
     '''
     Make a 7-panel figure for target scans.
     '''
@@ -216,6 +216,7 @@ def calibrator_scan_figure(table_dict, meta_dict):
             color="#7f7f7f")
     )
 
-    fig.show()
+    if show:
+        fig.show()
 
     return fig
