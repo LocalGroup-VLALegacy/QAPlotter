@@ -46,7 +46,7 @@ def basic_scatter(tab, xvar='x', yvar='y', hover='ants',
 
 
 def target_scan_figure(table_dict, meta_dict, show=False,
-                       time_format='iso', scatter_plot=go.Scatter):
+                       time_format='iso', scatter_plot=go.Scattergl):
     '''
     Make a 3-panel figure for target scans.
     '''
@@ -131,13 +131,13 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
         fig.update_xaxes(rangeslider_visible=False,
                          tickformatstops=[dict(dtickrange=[None, 1000e3], value="%H:%M:%S"),
-                                          dict(dtickrange=[1000e3, None], value="%H:%M"),
+                                          dict(dtickrange=[1000e3, None], value="%H:%M:%S"),
                                           ],
                          row=exp_keys[key]['row'],
                          col=exp_keys[key]['col'])
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
-    fig['layout']['xaxis2']['title'] = 'Time-MJD (s)'
+    fig['layout']['xaxis2']['title'] = 'Time'
     fig['layout']['xaxis3']['title'] = 'uv-distance (m)'
 
     fig['layout']['yaxis']['title'] = 'Amplitude'
@@ -159,7 +159,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     return fig
 
 
-def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Scatter):
+def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Scattergl):
     '''
     Make a 7-panel figure for target scans.
     '''
@@ -249,17 +249,17 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
         fig.update_xaxes(rangeslider_visible=False,
                          tickformatstops=[dict(dtickrange=[None, 1000], value="%H:%M:%S"),
-                                          dict(dtickrange=[1000, None], value="%H:%M"),
+                                          dict(dtickrange=[1000, None], value="%H:%M:%S"),
                                           ],
                          row=exp_keys[key]['row'],
                          col=exp_keys[key]['col'])
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
-    fig['layout']['xaxis2']['title'] = 'Time-MJD (s)'
+    fig['layout']['xaxis2']['title'] = 'Time'
     fig['layout']['xaxis3']['title'] = 'uv-distance (m)'
     fig['layout']['xaxis4']['title'] = 'Phase'
     fig['layout']['xaxis5']['title'] = 'Frequency (GHz)'
-    fig['layout']['xaxis6']['title'] = 'Time-MJD (s)'
+    fig['layout']['xaxis6']['title'] = 'Time'
     fig['layout']['xaxis7']['title'] = 'uv-distance (m)'
 
     fig['layout']['yaxis']['title'] = 'Amplitude'
