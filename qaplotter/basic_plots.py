@@ -62,12 +62,18 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
     fig = make_subplots(rows=1, cols=3)
 
-
     hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
 
     markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
+
+    def make_casa_timestring(x):
+
+        datetime_vals = vla_time_conversion(x)
+
+        return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
+                for dtime in datetime_vals]
 
     for nspw, spw in enumerate(spw_nums):
 
@@ -77,7 +83,9 @@ def target_scan_figure(table_dict, meta_dict, show=False,
             # Time is always the x-axis.
             if "time" in key:
                 def format_xvals(x):
-                    return vla_time_conversion(x)
+                    datetime_vals = vla_time_conversion(x)
+
+                    return datetime_vals
             else:
                 def format_xvals(x):
                     return x
@@ -99,9 +107,9 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                          tab_data['corr'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant1name'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
-                                         vla_time_conversion(tab_data['time'][spw_mask & corr_mask].tolist()))).T
+                                         make_casa_timestring(tab_data['time'][spw_mask & corr_mask].tolist()))).T
 
-                fig.append_trace(scatter_plot(x=tab_data[exp_keys[key]['x']][spw_mask & corr_mask],
+                fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
                                               marker=dict(symbol=marker,
@@ -117,7 +125,16 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
     # Make custom time ticks in a nicer format.
     # Also scale with zoom to stop tick labels from overlapping in different subplots.
+    for key in exp_keys:
+        if "time" not in key:
+            continue
 
+        fig.update_xaxes(rangeslider_visible=False,
+                         tickformatstops=[dict(dtickrange=[None, 1000e3], value="%H:%M:%S"),
+                                          dict(dtickrange=[1000e3, None], value="%H:%M"),
+                                          ],
+                         row=exp_keys[key]['row'],
+                         col=exp_keys[key]['col'])
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis2']['title'] = 'Time-MJD (s)'
@@ -169,6 +186,13 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
     markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
 
+    def make_casa_timestring(x):
+
+        datetime_vals = vla_time_conversion(x)
+
+        return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
+                for dtime in datetime_vals]
+
     for nspw, spw in enumerate(spw_nums):
 
         for nn, key in enumerate(exp_keys):
@@ -177,7 +201,9 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
             # Time is always the x-axis.
             if "time" in key:
                 def format_xvals(x):
-                    return vla_time_conversion(x)
+                    datetime_vals = vla_time_conversion(x)
+
+                    return datetime_vals
             else:
                 def format_xvals(x):
                     return x
@@ -199,7 +225,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                                          tab_data['corr'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant1name'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
-                                         vla_time_conversion(tab_data['time'][spw_mask & corr_mask].tolist()))).T
+                                         make_casa_timestring(tab_data['time'][spw_mask & corr_mask].tolist()))).T
 
                 fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
@@ -214,6 +240,19 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                                               showlegend=True if (nn == 0 and nc == 0) else False),
                                  row=exp_keys[key]['row'], col=exp_keys[key]['col'],
                                  )
+
+    # Make custom time ticks in a nicer format.
+    # Also scale with zoom to stop tick labels from overlapping in different subplots.
+    for key in exp_keys:
+        if "time" not in key:
+            continue
+
+        fig.update_xaxes(rangeslider_visible=False,
+                         tickformatstops=[dict(dtickrange=[None, 1000], value="%H:%M:%S"),
+                                          dict(dtickrange=[1000, None], value="%H:%M"),
+                                          ],
+                         row=exp_keys[key]['row'],
+                         col=exp_keys[key]['col'])
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis2']['title'] = 'Time-MJD (s)'

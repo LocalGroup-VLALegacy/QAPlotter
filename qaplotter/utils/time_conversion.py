@@ -20,12 +20,15 @@ def vla_time_conversion(time_mjd, return_casa_string=True):
     if return_casa_string:
         # Replace spaces and - with / to match CASA
         # If one element, returns a str
-        if isinstance(time.iso, str):
-            return time.iso.replace(" ", "/").replace("-", "/")
-        # Else returns an array of strings
-        else:
-            return [time_str.replace(" ", "/").replace("-", "/")
-                    for time_str in time.iso]
+        # if isinstance(time.iso, str):
+        #     return time.iso.replace(" ", "/").replace("-", "/")
+        # # Else returns an array of strings
+        # else:
+        #     return [time_str.replace(" ", "/").replace("-", "/")
+        #             for time_str in time.iso]
+
+        # Change to passing datetime objects.
+        return time.datetime
 
     # Otherwise return the Time object
     return time
