@@ -46,7 +46,7 @@ def basic_scatter(tab, xvar='x', yvar='y', hover='ants',
 
 
 def target_scan_figure(table_dict, meta_dict, show=False,
-                       time_format='iso'):
+                       time_format='iso', scatter_plot=go.Scatter):
     '''
     Make a 3-panel figure for target scans.
     '''
@@ -101,7 +101,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
                                          vla_time_conversion(tab_data['time'][spw_mask & corr_mask].tolist()))).T
 
-                fig.append_trace(go.Scattergl(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
+                fig.append_trace(scatter_plot(x=tab_data[exp_keys[key]['x']][spw_mask & corr_mask],
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
                                               marker=dict(symbol=marker,
@@ -114,6 +114,10 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                               showlegend=True if (nn == 0 and nc == 0) else False),
                                  row=exp_keys[key]['row'], col=exp_keys[key]['col'],
                                  )
+
+    # Make custom time ticks in a nicer format.
+    # Also scale with zoom to stop tick labels from overlapping in different subplots.
+
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis2']['title'] = 'Time-MJD (s)'
@@ -138,7 +142,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     return fig
 
 
-def calibrator_scan_figure(table_dict, meta_dict, show=False):
+def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Scatter):
     '''
     Make a 7-panel figure for target scans.
     '''
@@ -197,7 +201,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False):
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
                                          vla_time_conversion(tab_data['time'][spw_mask & corr_mask].tolist()))).T
 
-                fig.append_trace(go.Scattergl(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
+                fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
                                               marker=dict(symbol=marker,
