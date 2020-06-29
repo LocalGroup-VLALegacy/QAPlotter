@@ -8,7 +8,7 @@ from .utils import vla_time_conversion
 
 
 def target_scan_figure(table_dict, meta_dict, show=False,
-                       time_format='iso', scatter_plot=go.Scattergl):
+                       scatter_plot=go.Scattergl):
     '''
     Make a 3-panel figure for target scans.
     '''
