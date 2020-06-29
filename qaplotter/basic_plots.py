@@ -185,6 +185,9 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                          row=exp_keys[key]['row'],
                          col=exp_keys[key]['col'])
 
+    fig.update_xaxes(nticks=8)
+    fig.update_yaxes(nticks=8)
+
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis2']['title'] = 'Time'
     fig['layout']['xaxis3']['title'] = 'uv-distance (m)'
@@ -383,6 +386,9 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                                           ],
                          row=exp_keys[key]['row'],
                          col=exp_keys[key]['col'])
+
+    fig.update_xaxes(nticks=8)
+    fig.update_yaxes(nticks=8)
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis2']['title'] = 'Time'
