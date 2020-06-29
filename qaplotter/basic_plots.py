@@ -75,22 +75,32 @@ def target_scan_figure(table_dict, meta_dict, show=False,
         return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
                 for dtime in datetime_vals]
 
-    for nspw, spw in enumerate(spw_nums):
+    # colors_dict = dict.fromkeys(exp_keys)
 
-        for nn, key in enumerate(exp_keys):
+    # for key in colors_dict:
+    #     colors_dict[key] = {"SPW": [],
+    #                         "Scan": [],
+    #                         "Ant1": []}
+    colors_dict = {"SPW": [],
+                   "Scan": [],
+                   "Ant1": []}
 
-            # Convert the time axis values to strings
-            # Time is always the x-axis.
-            if "time" in key:
-                def format_xvals(x):
-                    datetime_vals = vla_time_conversion(x)
+    for nn, key in enumerate(exp_keys):
 
-                    return datetime_vals
-            else:
-                def format_xvals(x):
-                    return x
+        # Convert the time axis values to strings
+        # Time is always the x-axis.
+        if "time" in key:
+            def format_xvals(x):
+                datetime_vals = vla_time_conversion(x)
 
-            tab_data = table_dict[key]
+                return datetime_vals
+        else:
+            def format_xvals(x):
+                return x
+
+        tab_data = table_dict[key]
+
+        for nspw, spw in enumerate(spw_nums):
 
             spw_mask = tab_data['spw'] == spw
 
@@ -109,12 +119,41 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
                                          make_casa_timestring(tab_data['time'][spw_mask & corr_mask].tolist()))).T
 
+                # We're also going to record colors based on Scan and SPW
+                # SPW are unique and the colour palette has 11 colours.
+                spw_data = tab_data['spw'][spw_mask & corr_mask].tolist()
+
+                colors_dict['SPW'].append([px.colors.qualitative.Safe[nspw % 11] for _ in range(len(spw_data))])
+
+                # Want to map to unique scan values, not the scan numbers themselves
+                # (i.e., 50, 60, 70 -> 0, 1, 2)
+                scan_data = tab_data['scan'][spw_mask & corr_mask].tolist()
+
+                scan_map_dict = {}
+                for n_uniq, scan in enumerate(np.unique(scan_data)):
+                    scan_map_dict[scan] = n_uniq
+
+                colors_dict['Scan'].append([px.colors.qualitative.Safe[scan_map_dict[scan] % 11]
+                                            for scan in scan_data])
+
+                # And antennas for colours. Same approach as scans
+                ant_data = tab_data['ant1name'][spw_mask & corr_mask].tolist()
+
+                ant1_map_dict = {}
+                for n_uniq, scan in enumerate(np.unique(ant_data)):
+                    ant1_map_dict[scan] = n_uniq
+
+                colors_dict['Ant1'].append([px.colors.qualitative.Safe[ant1_map_dict[ant] % 11]
+                                            for ant in ant_data])
+
                 fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
                                               marker=dict(symbol=marker,
                                                           size=14,
-                                                          color=px.colors.qualitative.Safe[nspw % 11]),
+                                                          color=colors_dict['SPW'][-1]),
+                                                          # color=colors_dict['Scan'][-1]),
+                                                          # color=colors_dict['Ant1'][-1]),
                                               customdata=custom_data,
                                               hovertemplate=hovertemplate,
                                               name=f"SPW {spw}",
@@ -122,6 +161,9 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                               showlegend=True if (nn == 0 and nc == 0) else False),
                                  row=exp_keys[key]['row'], col=exp_keys[key]['col'],
                                  )
+
+    # Here's what needs to be updated for the colors
+    # fig['data'][0]['marker']['color']
 
     # Make custom time ticks in a nicer format.
     # Also scale with zoom to stop tick labels from overlapping in different subplots.
@@ -152,6 +194,28 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                   size=15,
                   color="#7f7f7f")
     )
+
+    # fig.update_layout(
+    #     updatemenus=[
+    #         go.layout.Updatemenu(type='buttons',
+    #                              direction='left',
+    #                              xanchor='left',
+    #                              yanchor='top',
+    #                              buttons=list([
+    #                                     dict(label='SPW',
+    #                                          method='update',
+    #                                          args=['yaxis2', {'marker.color': },
+    #                                          traces=[ADD TRACES]]),
+    #                                     dict(label='Scan',
+    #                                          method='update',
+    #                                          args=['yaxis2', {'marker.color': }]),
+    #                                     dict(label='Ant1',
+    #                                          method='update',
+    #                                          args=['yaxis2', {'marker.color': }]),
+    #                                             ]),
+    #         )
+    #     ]
+    # )
 
     if show:
         fig.show()
