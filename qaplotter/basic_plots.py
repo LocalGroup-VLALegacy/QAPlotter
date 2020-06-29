@@ -83,7 +83,9 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     #                         "Ant1": []}
     colors_dict = {"SPW": [],
                    "Scan": [],
-                   "Ant1": []}
+                   "Ant1": [],
+                   "Ant2": [],
+                   "Corr": []}
 
     for nn, key in enumerate(exp_keys):
 
@@ -140,11 +142,24 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                 ant_data = tab_data['ant1name'][spw_mask & corr_mask].tolist()
 
                 ant1_map_dict = {}
-                for n_uniq, scan in enumerate(np.unique(ant_data)):
-                    ant1_map_dict[scan] = n_uniq
+                for n_uniq, ant in enumerate(np.unique(ant_data)):
+                    ant1_map_dict[ant] = n_uniq
 
                 colors_dict['Ant1'].append([px.colors.qualitative.Safe[ant1_map_dict[ant] % 11]
                                             for ant in ant_data])
+
+                ant_data = tab_data['ant2name'][spw_mask & corr_mask].tolist()
+
+                ant2_map_dict = {}
+                for n_uniq, ant in enumerate(np.unique(ant_data)):
+                    ant2_map_dict[ant] = n_uniq
+
+                colors_dict['Ant2'].append([px.colors.qualitative.Safe[ant2_map_dict[ant] % 11]
+                                            for ant in ant_data])
+
+                # And corr
+                colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
+                                            for _ in range(len(spw_data))])
 
                 fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
@@ -152,8 +167,6 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                               marker=dict(symbol=marker,
                                                           size=14,
                                                           color=colors_dict['SPW'][-1]),
-                                                          # color=colors_dict['Scan'][-1]),
-                                                          # color=colors_dict['Ant1'][-1]),
                                               customdata=custom_data,
                                               hovertemplate=hovertemplate,
                                               name=f"SPW {spw}",
@@ -195,27 +208,37 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                   color="#7f7f7f")
     )
 
-    # fig.update_layout(
-    #     updatemenus=[
-    #         go.layout.Updatemenu(type='buttons',
-    #                              direction='left',
-    #                              xanchor='left',
-    #                              yanchor='top',
-    #                              buttons=list([
-    #                                     dict(label='SPW',
-    #                                          method='update',
-    #                                          args=['yaxis2', {'marker.color': },
-    #                                          traces=[ADD TRACES]]),
-    #                                     dict(label='Scan',
-    #                                          method='update',
-    #                                          args=['yaxis2', {'marker.color': }]),
-    #                                     dict(label='Ant1',
-    #                                          method='update',
-    #                                          args=['yaxis2', {'marker.color': }]),
-    #                                             ]),
-    #         )
-    #     ]
-    # )
+    updatemenus = go.layout.Updatemenu(type='buttons',
+                                       direction='left',
+                                       xanchor='right',
+                                       yanchor='top',
+                                       buttons=list([dict(label='SPW',
+                                                          method='update',
+                                                          args=[{'marker.color': [col for col in colors_dict['SPW']]}],
+                                                          ),
+
+                                                    dict(label='Scan',
+                                                         method='update',
+                                                         args=[{'marker.color': [col for col in colors_dict['Scan']]}],
+                                                         ),
+
+                                                    dict(label='Ant1',
+                                                         method='update',
+                                                         args=[{'marker.color': [col for col in colors_dict['Ant1']]}],
+                                                         ),
+
+                                                    dict(label='Ant2',
+                                                         method='update',
+                                                         args=[{'marker.color': [col for col in colors_dict['Ant2']]}],
+                                                         ),
+
+                                                    dict(label='Corr',
+                                                         method='update',
+                                                         args=[{'marker.color': [col for col in colors_dict['Corr']]}],
+                                                         ),
+                                                     ]))
+
+    fig.update_layout(updatemenus=[updatemenus])
 
     if show:
         fig.show()
