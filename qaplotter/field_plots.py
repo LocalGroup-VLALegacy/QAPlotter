@@ -14,15 +14,21 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     '''
 
     # There should be 3 fields:
-    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1},
-                'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2},
-                'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3}}
-
+    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1,
+                             "title": "Amp vs. Freq; Time & Baseline avg"},
+                'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2,
+                             "title": "Amp vs. Time; Freq & Baseline avg"},
+                'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3,
+                               "title": "Amp vs. uv-dist; Time & Freq avg"}}
     for key in exp_keys:
         if key not in table_dict.keys():
             raise KeyError(f"Required dict key {key} not found.")
 
-    fig = make_subplots(rows=1, cols=3)
+    subplot_titles = [exp_keys['amp_chan']['title'],
+                      exp_keys['amp_time']['title'],
+                      exp_keys['amp_uvdist']['title']]
+
+    fig = make_subplots(rows=1, cols=3, subplot_titles=subplot_titles)
 
     hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
@@ -214,21 +220,38 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     '''
 
     # There should be 8 fields:
-    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1},
-                'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2},
-                'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3},
-                'amp_phase': {'x': 'y', 'y': 'x', 'row': 1, 'col': 4},
-                'phase_chan': {'x': 'freq', 'y': 'y', 'row': 2, 'col': 1},
-                'phase_time': {'x': 'time', 'y': 'y', 'row': 2, 'col': 2},
-                'phase_uvdist': {'x': 'x', 'y': 'y', 'row': 2, 'col': 3},
-                'ampresid_uvwave': {'x': 'x', 'y': 'y', 'row': 2, 'col': 4}}
+    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1,
+                             "title": "Amp vs. Freq; Time & Baseline avg"},
+                'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2,
+                             "title": "Amp vs. Time; Freq & Baseline avg"},
+                'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3,
+                               "title": "Amp vs. uv-dist; Time & Freq avg"},
+                'amp_phase': {'x': 'y', 'y': 'x', 'row': 1, 'col': 4,
+                              "title": "Amp vs. Phase; Time & Freq avg"},
+                'phase_chan': {'x': 'freq', 'y': 'y', 'row': 2, 'col': 1,
+                               "title": "Phase vs. Freq; Time & Baseline avg"},
+                'phase_time': {'x': 'time', 'y': 'y', 'row': 2, 'col': 2,
+                               "title": "Phase vs. Time; Freq & Baseline avg"},
+                'phase_uvdist': {'x': 'x', 'y': 'y', 'row': 2, 'col': 3,
+                                 "title": "Phase vs. uv-dist; Time & Freq avg"},
+                'ampresid_uvwave': {'x': 'x', 'y': 'y', 'row': 2, 'col': 4,
+                                    "title": "Resid Amp vs. uv-wave; Time & Freq avg"}}
 
     for key in exp_keys:
         if key not in table_dict.keys():
             raise KeyError(f"Required dict key {key} not found.")
 
-    fig = make_subplots(rows=2, cols=4)
+    # It's easier to just do this by-hand. Or switch to an ordereddict
+    subplot_titles = [exp_keys['amp_chan']['title'],
+                      exp_keys['amp_time']['title'],
+                      exp_keys['amp_uvdist']['title'],
+                      exp_keys['amp_phase']['title'],
+                      exp_keys['phase_chan']['title'],
+                      exp_keys['phase_time']['title'],
+                      exp_keys['phase_uvdist']['title'],
+                      exp_keys['ampresid_uvwave']['title']]
 
+    fig = make_subplots(rows=2, cols=4, subplot_titles=subplot_titles)
 
     hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
