@@ -121,7 +121,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
                                               marker=dict(symbol=marker,
-                                                          size=14,
+                                                          size=7,
                                                           color=colors_dict['SPW'][-1]),
                                               customdata=custom_data,
                                               hovertemplate=hovertemplate,
@@ -221,7 +221,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                 'phase_chan': {'x': 'freq', 'y': 'y', 'row': 2, 'col': 1},
                 'phase_time': {'x': 'time', 'y': 'y', 'row': 2, 'col': 2},
                 'phase_uvdist': {'x': 'x', 'y': 'y', 'row': 2, 'col': 3},
-                'ampresid_uvwave': {'x': 'x', 'x': 'x', 'row': 2, 'col': 4}}
+                'ampresid_uvwave': {'x': 'x', 'y': 'y', 'row': 2, 'col': 4}}
 
     for key in exp_keys:
         if key not in table_dict.keys():
@@ -327,7 +327,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
                                               marker=dict(symbol=marker,
-                                                          size=14,
+                                                          size=7,
                                                           color=px.colors.qualitative.Safe[nspw % 11]),
                                               customdata=custom_data,
                                               hovertemplate=hovertemplate,
@@ -360,7 +360,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     fig['layout']['xaxis5']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis6']['title'] = 'Time'
     fig['layout']['xaxis7']['title'] = 'uv-distance (m)'
-    fig['layout']['xaxis7']['title'] = 'uv-wave'
+    fig['layout']['xaxis8']['title'] = 'uv-wave'
 
     fig['layout']['yaxis']['title'] = 'Amplitude'
     fig['layout']['yaxis2']['title'] = 'Amplitude'
