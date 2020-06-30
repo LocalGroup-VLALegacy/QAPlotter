@@ -134,21 +134,21 @@ def read_bpcal_data_tables(inp_path):
         # There aren't many to loop through.
         for amp_name in amp_tab_names:
 
-            if str(spw) in amp_name.split("spw")[1]:
+            if f"_spw{spw}.txt" in amp_name:
                 break
 
         for phase_name in phase_tab_names:
 
-            if str(spw) in phase_name.split("spw")[1]:
+            if f"_spw{spw}.txt" in phase_name:
                 break
 
         amp_out = read_casa_txt(amp_name)
         phase_out = read_casa_txt(phase_name)
 
         table_dict['amp'][spw] = amp_out[0]
-        table_dict['phase'][spw] = amp_out[0]
+        table_dict['phase'][spw] = phase_out[0]
 
         meta_dict['amp'][spw] = amp_out[1]
-        meta_dict['phase'][spw] = amp_out[1]
+        meta_dict['phase'][spw] = phase_out[1]
 
     return table_dict, meta_dict
