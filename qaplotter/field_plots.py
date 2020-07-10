@@ -157,7 +157,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     fig.update_yaxes(nticks=8)
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
-    fig['layout']['xaxis2']['title'] = 'Time'
+    fig['layout']['xaxis2']['title'] = 'Time (UTC)'
     fig['layout']['xaxis3']['title'] = 'uv-distance (m)'
 
     fig['layout']['yaxis']['title'] = 'Amplitude'
@@ -377,11 +377,11 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     fig.update_yaxes(nticks=8)
 
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
-    fig['layout']['xaxis2']['title'] = 'Time'
+    fig['layout']['xaxis2']['title'] = 'Time (UTC)'
     fig['layout']['xaxis3']['title'] = 'uv-distance (m)'
     fig['layout']['xaxis4']['title'] = 'Phase'
     fig['layout']['xaxis5']['title'] = 'Frequency (GHz)'
-    fig['layout']['xaxis6']['title'] = 'Time'
+    fig['layout']['xaxis6']['title'] = 'Time (UTC)'
     fig['layout']['xaxis7']['title'] = 'uv-distance (m)'
     fig['layout']['xaxis8']['title'] = 'uv-wave'
 
