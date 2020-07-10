@@ -5,7 +5,7 @@ import os
 from .utils import read_field_data_tables, read_bpcal_data_tables
 from .field_plots import target_scan_figure, calibrator_scan_figure
 from .bp_plots import bp_amp_phase_figures
-from .html_linking import make_all_html_links
+from .html_linking import make_all_html_links, make_bandpass_all_html_links
 
 
 def make_field_plots(folder, output_folder):
@@ -57,6 +57,8 @@ def make_BP_plots(folder, output_folder):
 
     table_dict, meta_dict = read_bpcal_data_tables(folder)
 
+    meta_dict_0 = meta_dict['amp'][list(meta_dict['amp'].keys())[0]]
+
     figs = bp_amp_phase_figures(table_dict, meta_dict,
                                 nspw_per_figure=4)
 
@@ -64,7 +66,13 @@ def make_BP_plots(folder, output_folder):
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
+    fig_names = []
+
     for i, fig in enumerate(figs):
 
         out_html_name = f"BP_amp_phase_plotly_interactive_{i}.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
+
+        fig_names.append(out_html_name)
+
+    make_bandpass_all_html_links(output_folder, fig_names, meta_dict_0)
