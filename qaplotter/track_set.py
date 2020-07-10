@@ -5,6 +5,7 @@ import os
 from .utils import read_field_data_tables, read_bpcal_data_tables
 from .field_plots import target_scan_figure, calibrator_scan_figure
 from .bp_plots import bp_amp_phase_figures
+from .html_linking import make_all_html_links
 
 
 def make_field_plots(folder, output_folder):
@@ -25,9 +26,11 @@ def make_field_plots(folder, output_folder):
     fieldnames = [get_fieldname(filename) for filename in txt_files]
 
     # Get unique names only
-    fieldnames = list(set(fieldnames))
+    fieldnames = sorted(list(set(fieldnames)))
 
-    for field in fieldnames:
+    meta_dict_0 = read_field_data_tables(fieldnames[0], folder)[1]['amp_time']
+
+    for i, field in enumerate(fieldnames):
 
         table_dict, meta_dict = read_field_data_tables(field, folder)
 
@@ -45,6 +48,9 @@ def make_field_plots(folder, output_folder):
 
         out_html_name = f"{field}_plotly_interactive.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
+
+    # Make the linking files into the same folder.
+    make_all_html_links(output_folder, fieldnames, meta_dict_0)
 
 
 def make_BP_plots(folder, output_folder):
