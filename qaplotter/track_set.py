@@ -76,3 +76,31 @@ def make_BP_plots(folder, output_folder):
         fig_names.append(out_html_name)
 
     make_bandpass_all_html_links(output_folder, fig_names, meta_dict_0)
+
+
+def make_all_plots(folder_fields="scan_plots_QAplots",
+                   output_folder_fields="scan_plots_txt",
+                   folder_BPs="finalBPcal_txt",
+                   output_folder_BPs="finalBPcal_QAplots"):
+    '''
+    Make both the field and BP cal plots based on the standard pipeline folder names defined
+    in the ReductionPipeline package (https://github.com/LocalGroup-VLALegacy/ReductionPipeline).
+
+    Additional QA plot types will be added here to create a single call to produce all QA plots.
+
+    Parameters
+    ----------
+    folder_fields : str, optional
+        Folder where the txt files per field are located.
+    output_folder_fields : str, optional
+        Output folder to place the interactive HTML figures per field.
+    folder_BPs : str, optional
+        Folder where the txt files for bandpass solutions per SPW are located.
+    output_folder_BPs : str, optional
+        Output folder to place the interactive HTML figures per bandpass SPW solution.
+
+    '''
+
+    make_field_plots(folder_fields, output_folder_fields)
+
+    make_BP_plots(folder_BPs, output_folder_BPs)
