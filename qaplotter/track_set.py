@@ -78,8 +78,8 @@ def make_BP_plots(folder, output_folder):
     make_bandpass_all_html_links(output_folder, fig_names, meta_dict_0)
 
 
-def make_all_plots(folder_fields="scan_plots_QAplots",
-                   output_folder_fields="scan_plots_txt",
+def make_all_plots(folder_fields="scan_plots_txt",
+                   output_folder_fields="scan_plots_QAplots",
                    folder_BPs="finalBPcal_txt",
                    output_folder_BPs="finalBPcal_QAplots"):
     '''
