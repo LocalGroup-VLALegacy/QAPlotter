@@ -122,7 +122,7 @@ def bp_amp_phase_figures(table_dict, meta_dict,
         meta = meta_dict['amp'][spw_keys[0]]
 
         fig.update_layout(
-            title=f"BP table: {meta['vis']}",
+            title=f"BP table: {meta['vis']}<br>Marker symbols show correlation (RR, LL).",
             font=dict(family="Courier New, monospace",
                       size=15,
                       color="#7f7f7f")
