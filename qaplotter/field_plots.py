@@ -206,7 +206,8 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                                          ),
                                                      ]))
 
-    fig.update_layout(updatemenus=[updatemenus])
+    fig.update_layout(updatemenus=[updatemenus],
+                      margin=dict(t=150))
 
     if show:
         fig.show()
@@ -437,7 +438,8 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                                                          ),
                                                      ]))
 
-    fig.update_layout(updatemenus=[updatemenus])
+    fig.update_layout(updatemenus=[updatemenus],
+                      margin=dict(t=150))
 
     if show:
         fig.show()
