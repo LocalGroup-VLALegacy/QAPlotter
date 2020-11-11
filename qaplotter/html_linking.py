@@ -66,7 +66,8 @@ def make_plot_html_page(field_list, active_idx=0):
     prev_field = field_list[active_idx - 1] if active_idx != 0 else None
     next_field = field_list[active_idx + 1] if active_idx < len(field_list) - 1 else None
 
-    html_string += make_next_previous_navbar(prev_field, next_field)
+    html_string += make_next_previous_navbar(prev_field, next_field,
+                                             current_field=field_list[active_idx])
 
     html_string += make_sidebar(field_list, active_idx=active_idx)
 
@@ -197,7 +198,8 @@ def make_html_suffix():
     return html_suffix_string
 
 
-def make_next_previous_navbar(prev_field=None, next_field=None):
+def make_next_previous_navbar(prev_field=None, next_field=None,
+                              current_field=None):
     '''
     Navbar links
     '''
@@ -209,9 +211,15 @@ def make_next_previous_navbar(prev_field=None, next_field=None):
 
     if prev_field is not None:
         navbar_string += f'    <a href="linker_{prev_field}.html">{prev_field} (Previous)</a>\n'
+    else:
+        # If None, use current field
+        navbar_string += f'    <a href="linker_{current_field}.html">{current_field} (Previous)</a>\n'
 
     if next_field is not None:
         navbar_string += f'    <a href="linker_{next_field}.html">{next_field} (Next)</a>\n'
+    else:
+        # If None, use current field
+        navbar_string += f'    <a href="linker_{current_field}.html">{current_field} (Previous)</a>\n'
 
     navbar_string += "</div>\n\n"
 
