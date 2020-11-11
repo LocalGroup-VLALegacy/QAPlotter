@@ -19,11 +19,11 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
     # There should be 3 fields:
     exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1,
-                             "title": "Amp vs. Freq; Time & Baseline avg"},
+                             "title": "Amp vs. Freq<br>Time & Baseline avg"},
                 'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2,
-                             "title": "Amp vs. Time; Freq & Baseline avg"},
+                             "title": "Amp vs. Time<br>Freq & Baseline avg"},
                 'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3,
-                               "title": "Amp vs. uv-dist; Time & Freq avg"}}
+                               "title": "Amp vs. uv-dist<br>Time & Freq avg"}}
     for key in exp_keys:
         if key not in table_dict.keys():
             raise KeyError(f"Required dict key {key} not found.")
@@ -163,14 +163,14 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     fig['layout']['xaxis2']['title'] = 'Time (UTC)'
     fig['layout']['xaxis3']['title'] = 'uv-distance (m)'
 
-    fig['layout']['yaxis']['title'] = 'Amplitude'
-    fig['layout']['yaxis2']['title'] = 'Amplitude'
-    fig['layout']['yaxis3']['title'] = 'Amplitude'
+    fig['layout']['yaxis']['title'] = 'Amplitude (Jy)'
+    fig['layout']['yaxis2']['title'] = 'Amplitude (Jy)'
+    fig['layout']['yaxis3']['title'] = 'Amplitude (Jy)'
 
     meta = meta_dict['amp_time']
 
     fig.update_layout(
-        title=f"Field: {meta['field']}<br>MS: {meta['vis']}<br>Marker symbols show correlation (RR, LL).",
+        title=f"Field: {meta['field']}<br>MS: {meta['vis']}",
         font=dict(family="Courier New, monospace",
                   size=15,
                   color="#7f7f7f")
@@ -225,21 +225,21 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
     # There should be 8 fields:
     exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1,
-                             "title": "Amp vs. Freq; Time & Baseline avg"},
+                             "title": "Amp vs. Freq<br>Time & Baseline avg"},
                 'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2,
-                             "title": "Amp vs. Time; Freq & Baseline avg"},
+                             "title": "Amp vs. Time<br>Freq & Baseline avg"},
                 'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3,
-                               "title": "Amp vs. uv-dist; Time & Freq avg"},
+                               "title": "Amp vs. uv-dist<br>Time & Freq avg"},
                 'amp_phase': {'x': 'y', 'y': 'x', 'row': 1, 'col': 4,
-                              "title": "Amp vs. Phase; Time & Freq avg"},
+                              "title": "Amp vs. Phase<br>Time & Freq avg"},
                 'phase_chan': {'x': 'freq', 'y': 'y', 'row': 2, 'col': 1,
-                               "title": "Phase vs. Freq; Time & Baseline avg"},
+                               "title": "Phase vs. Freq<br>Time & Baseline avg"},
                 'phase_time': {'x': 'time', 'y': 'y', 'row': 2, 'col': 2,
-                               "title": "Phase vs. Time; Freq & Baseline avg"},
+                               "title": "Phase vs. Time<br>Freq & Baseline avg"},
                 'phase_uvdist': {'x': 'x', 'y': 'y', 'row': 2, 'col': 3,
-                                 "title": "Phase vs. uv-dist; Time & Freq avg"},
+                                 "title": "Phase vs. uv-dist<br>Time & Freq avg"},
                 'ampresid_uvwave': {'x': 'x', 'y': 'y', 'row': 2, 'col': 4,
-                                    "title": "Resid Amp vs. uv-wave; Time & Freq avg"}}
+                                    "title": "Resid Amp vs. uv-wave<br>Time & Freq avg"}}
 
     for key in exp_keys:
         if key not in table_dict.keys():
@@ -381,25 +381,26 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis2']['title'] = 'Time (UTC)'
     fig['layout']['xaxis3']['title'] = 'uv-distance (m)'
-    fig['layout']['xaxis4']['title'] = 'Phase'
+    fig['layout']['xaxis4']['title'] = 'Phase (deg)'
     fig['layout']['xaxis5']['title'] = 'Frequency (GHz)'
     fig['layout']['xaxis6']['title'] = 'Time (UTC)'
     fig['layout']['xaxis7']['title'] = 'uv-distance (m)'
     fig['layout']['xaxis8']['title'] = 'uv-wave'
 
-    fig['layout']['yaxis']['title'] = 'Amplitude'
-    fig['layout']['yaxis2']['title'] = 'Amplitude'
-    fig['layout']['yaxis3']['title'] = 'Amplitude'
-    fig['layout']['yaxis4']['title'] = 'Amplitude'
-    fig['layout']['yaxis5']['title'] = 'Phase'
-    fig['layout']['yaxis6']['title'] = 'Phase'
-    fig['layout']['yaxis7']['title'] = 'Phase'
-    fig['layout']['yaxis8']['title'] = '(Amplitude - Model) Residual'
+    # Check these: is it actually Jy or Jy/deg, etc?
+    fig['layout']['yaxis']['title'] = 'Amplitude (Jy)'
+    fig['layout']['yaxis2']['title'] = 'Amplitude (Jy)'
+    fig['layout']['yaxis3']['title'] = 'Amplitude (Jy)'
+    fig['layout']['yaxis4']['title'] = 'Amplitude (Jy)'
+    fig['layout']['yaxis5']['title'] = 'Phase (deg)'
+    fig['layout']['yaxis6']['title'] = 'Phase (deg)'
+    fig['layout']['yaxis7']['title'] = 'Phase (deg)'
+    fig['layout']['yaxis8']['title'] = '(Amplitude - Model) Residual (Jy)'
 
     meta = meta_dict['amp_time']
 
     fig.update_layout(
-        title=f"Field: {meta['field']}<br>MS: {meta['vis']}<br>Marker symbols show correlation (RR, LL).",
+        title=f"Field: {meta['field']}<br>MS: {meta['vis']}",
         font=dict(
             family="Courier New, monospace",
             size=15,
