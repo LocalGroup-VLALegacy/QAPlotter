@@ -6,6 +6,10 @@ import numpy as np
 
 from .utils import vla_time_conversion
 
+# Define a common set of markers to plot for different correlations
+# e.g. RR, LL, RL, LR
+markers = ['circle', 'cross', 'triangle-up', 'triangle-down']
+
 
 def target_scan_figure(table_dict, meta_dict, show=False,
                        scatter_plot=go.Scattergl):
@@ -34,7 +38,6 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
 
-    markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
 
     def make_casa_timestring(x):
 
@@ -257,8 +260,6 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
-
-    markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
 
     def make_casa_timestring(x):
 
