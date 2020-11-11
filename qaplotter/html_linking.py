@@ -246,7 +246,7 @@ def make_sidebar(field_list, active_idx=0):
         else:
             class_is = ""
 
-        sidebar_string += f'    <a class="{class_is}" href="linker_{field}.html">{i}. {field}</a>\n'
+        sidebar_string += f'    <a class="{class_is}" href="linker_{field}.html">{i+1}. {field}</a>\n'
 
     sidebar_string += '</div>\n\n'
 
@@ -339,7 +339,8 @@ def make_plot_bandpass_html_page(bandpass_plots, active_idx=0):
     return html_string
 
 
-def make_next_previous_navbar_bandpass(prev_field=None, next_field=None):
+def make_next_previous_navbar_bandpass(prev_field=None, next_field=None,
+                                       current_field=None):
     '''
     Navbar links
     '''
@@ -351,9 +352,15 @@ def make_next_previous_navbar_bandpass(prev_field=None, next_field=None):
 
     if prev_field is not None:
         navbar_string += f'    <a href="linker_bp_{prev_field}.html">Bandpass Plot {prev_field} (Previous)</a>\n'
+    else:
+        # If None, use current field
+        navbar_string += f'    <a href="linker_bp_{current_field}.html">Bandpass Plot {current_field} (Previous)</a>\n'
 
     if next_field is not None:
         navbar_string += f'    <a href="linker_bp_{next_field}.html">Bandpass Plot {next_field} (Next)</a>\n'
+    else:
+        # If None, use current field
+        navbar_string += f'    <a href="linker_bp_{current_field}.html">Bandpass Plot {current_field} (Next)</a>\n'
 
     navbar_string += "</div>\n\n"
 
