@@ -219,7 +219,7 @@ def make_next_previous_navbar(prev_field=None, next_field=None,
         navbar_string += f'    <a href="linker_{next_field}.html">{next_field} (Next)</a>\n'
     else:
         # If None, use current field
-        navbar_string += f'    <a href="linker_{current_field}.html">{current_field} (Previous)</a>\n'
+        navbar_string += f'    <a href="linker_{current_field}.html">{current_field} (Next)</a>\n'
 
     navbar_string += "</div>\n\n"
 
