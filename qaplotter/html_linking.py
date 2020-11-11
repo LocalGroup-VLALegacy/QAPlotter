@@ -246,7 +246,7 @@ def make_sidebar(field_list, active_idx=0):
         else:
             class_is = ""
 
-        sidebar_string += f'    <a class="{class_is}" href="linker_{field}.html">{field}</a>\n'
+        sidebar_string += f'    <a class="{class_is}" href="linker_{field}.html">{i}. {field}</a>\n'
 
     sidebar_string += '</div>\n\n'
 
