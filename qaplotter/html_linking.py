@@ -5,6 +5,8 @@ Function for embedding interactive plots and adding links, etc.
 
 from pathlib import Path
 
+from .utils import datetime_from_msname
+
 
 def make_all_html_links(folder, field_list, ms_info_dict):
     '''
@@ -51,7 +53,14 @@ def make_index_html_page(field_list, ms_info_dict):
     # Add in MS info:
     html_string += '<div class="content" id="basic">\n'
     html_string += f'<h2>{ms_info_dict["vis"]}</h2>\n'
-    # html_string += f'<p>{ms_info_dict["date"]}</p>\n'
+
+    # If the msname keeps the SDM naming format, extract the UTC datetime
+    try:
+        utc_datetime = datetime_from_msname(ms_info_dict["vis"])
+        html_string += f'<p>UTC datetime: {utc_datetime.strftime("%Y/%m/%d/%H:%M")}</p>\n'
+    except (AssertionError, ValueError):
+        pass
+
     html_string += '</div>\n\n'
 
     html_string += make_html_suffix()
@@ -313,7 +322,14 @@ def make_index_bandpass_html_page(bandpass_plots, ms_info_dict):
     # Add in MS info:
     html_string += '<div class="content" id="basic">\n'
     html_string += f'<h2>{ms_info_dict["vis"]}</h2>\n'
-    # html_string += f'<p>{ms_info_dict["date"]}</p>\n'
+
+    # If the msname keeps the SDM naming format, extract the UTC datetime
+    try:
+        utc_datetime = datetime_from_msname(ms_info_dict["vis"])
+        html_string += f'<p>UTC datetime: {utc_datetime.strftime("%Y/%m/%d/%H:%M")}</p>\n'
+    except (AssertionError, ValueError):
+        pass
+
     html_string += '</div>\n\n'
 
     html_string += make_html_suffix()
