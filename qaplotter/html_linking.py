@@ -13,10 +13,7 @@ def return_webserver_link():
     Return a link to the webserver home page.
     '''
 
-    addr = "142.244.87.228"
-    homepage = "~vlaxl"
-
-    return f"{addr}/{homepage}/"
+    return "../"
 
 
 def generate_webserver_track_link(track_name):
@@ -122,7 +119,7 @@ def make_all_html_links(track_folder, folder, field_list, ms_info_dict):
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_html_page(field_list, ms_info_dict), file=open(index_file, 'a'))
+    print(make_index_html_page(track_folder, field_list, ms_info_dict), file=open(index_file, 'a'))
 
     # Loop through the fields
     for i, field in enumerate(field_list):
@@ -136,9 +133,15 @@ def make_all_html_links(track_folder, folder, field_list, ms_info_dict):
               file=open(field_file, 'a'))
 
 
-def make_index_html_page(field_list, ms_info_dict):
+def make_index_html_page(folder, field_list, ms_info_dict):
 
     html_string = make_html_preamble()
+
+    # Add navigation bar with link to other QA products
+    active_idx = 0
+    html_string += make_next_previous_navbar(folder, prev_field=None,
+                                             next_field=field_list[min(active_idx + 1, len(field_list))],
+                                             current_field=field_list[active_idx])
 
     html_string += make_sidebar(field_list, active_idx=None)
 
@@ -399,7 +402,7 @@ def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_d
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_bandpass_html_page(bandpass_plots, ms_info_dict), file=open(index_file, 'a'))
+    print(make_index_bandpass_html_page(track_folder, bandpass_plots, ms_info_dict), file=open(index_file, 'a'))
 
     # Loop through the fields
     for i, bpplot in enumerate(bandpass_plots):
@@ -415,9 +418,18 @@ def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_d
               file=open(field_file, 'a'))
 
 
-def make_index_bandpass_html_page(bandpass_plots, ms_info_dict):
+def make_index_bandpass_html_page(folder, bandpass_plots, ms_info_dict):
 
     html_string = make_html_preamble()
+
+    # Add links to other index files, etc.
+    active_idx = 0
+    next_field = active_idx + 1 if active_idx < len(bandpass_plots) - 1 else None
+
+    html_string += make_next_previous_navbar_bandpass(folder,
+                                                      prev_field=None,
+                                                      next_field=next_field,
+                                                      current_field=active_idx)
 
     html_string += make_sidebar_bandpass(bandpass_plots, active_idx=None)
 
@@ -446,7 +458,8 @@ def make_plot_bandpass_html_page(folder, bandpass_plots, active_idx=0):
     prev_field = active_idx - 1 if active_idx != 0 else None
     next_field = active_idx + 1 if active_idx < len(bandpass_plots) - 1 else None
 
-    html_string += make_next_previous_navbar_bandpass(folder, prev_field, next_field)
+    html_string += make_next_previous_navbar_bandpass(folder, prev_field, next_field,
+                                                      current_field=active_idx)
 
     html_string += make_sidebar_bandpass(bandpass_plots, active_idx=active_idx)
 
