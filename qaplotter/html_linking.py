@@ -8,7 +8,99 @@ from pathlib import Path
 from .utils import datetime_from_msname
 
 
-def make_all_html_links(folder, field_list, ms_info_dict):
+def return_webserver_link():
+    '''
+    Return a link to the webserver home page.
+    '''
+
+    addr = "142.244.87.228"
+    homepage = "~vlaxl"
+
+    return f"{addr}/{homepage}/"
+
+
+def generate_webserver_track_link(track_name):
+    '''
+    Return a link to the home page for a given track.
+
+    '''
+
+    # TODO: Update to handle both continuum and lines in one page.
+
+    track_links = {}
+
+    track_links["Webserver Home"] = return_webserver_link()
+
+    # track_links["Track Home"] = f"{track_name}"
+    track_links["Track Home"] = "index.html"
+
+    track_links["Continuum Weblog"] = "weblog/html/index.html"
+
+    track_links['Continuum Field QA Plots'] = "scan_plots_QAplots/index.html"
+
+    track_links['Continuum BP QA Plots'] = "finalBPcal_QAplots/index.html"
+
+    return track_links
+
+
+def make_index_html_homepage(folder, ms_info_dict):
+    '''
+    Home page for the track with links to the weblogs, QA plots, etc.
+    '''
+
+
+    html_string = make_html_preamble()
+
+    link_locations = generate_webserver_track_link(folder)
+
+    html_string = '<div class="navbar">\n'
+
+    for linkname in link_locations:
+
+        html_string += f'    <a href="{link_locations[linkname]}">{linkname}</a>\n'
+
+    html_string += "</div>\n\n"
+
+    # Add in MS info:
+    html_string += '<div class="content" id="basic">\n'
+    html_string += f'<h2>{ms_info_dict["vis"]}</h2>\n'
+
+    # If the msname keeps the SDM naming format, extract the UTC datetime
+    try:
+        utc_datetime = datetime_from_msname(ms_info_dict["vis"])
+        html_string += f'<p>UTC datetime: {utc_datetime.strftime("%Y/%m/%d/%H:%M")}</p>\n'
+    except (AssertionError, ValueError):
+        pass
+
+    html_string += '</div>\n\n'
+
+    html_string += make_html_suffix()
+
+    return html_string
+
+
+def make_html_homepage(folder, ms_info_dict):
+
+    mypath = Path(folder)
+
+    # CSS style
+    css_file = mypath / "qa_plot.css"
+
+    if css_file.exists():
+        css_file.unlink()
+
+    print(css_page_style(), file=open(css_file, 'a'))
+
+    # index file
+    index_file = mypath / "index.html"
+
+    if index_file.exists():
+        index_file.unlink()
+
+    print(make_index_html_homepage(folder, ms_info_dict), file=open(index_file, 'a'))
+
+
+def make_all_html_links(track_folder, folder, field_list, ms_info_dict):
     '''
     Make and save all html files for linking the interactive plots
     together.
@@ -40,7 +132,7 @@ def make_all_html_links(folder, field_list, ms_info_dict):
         if field_file.exists():
             field_file.unlink()
 
-        print(make_plot_html_page(field_list, active_idx=i),
+        print(make_plot_html_page(track_folder, field_list, active_idx=i),
               file=open(field_file, 'a'))
 
 
@@ -68,14 +160,14 @@ def make_index_html_page(field_list, ms_info_dict):
     return html_string
 
 
-def make_plot_html_page(field_list, active_idx=0):
+def make_plot_html_page(folder, field_list, active_idx=0):
 
     html_string = make_html_preamble()
 
     prev_field = field_list[active_idx - 1] if active_idx != 0 else None
     next_field = field_list[active_idx + 1] if active_idx < len(field_list) - 1 else None
 
-    html_string += make_next_previous_navbar(prev_field, next_field,
+    html_string += make_next_previous_navbar(folder, prev_field, next_field,
                                              current_field=field_list[active_idx])
 
     html_string += make_sidebar(field_list, active_idx=active_idx)
@@ -207,7 +299,7 @@ def make_html_suffix():
     return html_suffix_string
 
 
-def make_next_previous_navbar(prev_field=None, next_field=None,
+def make_next_previous_navbar(folder, prev_field=None, next_field=None,
                               current_field=None):
     '''
     Navbar links
@@ -229,6 +321,14 @@ def make_next_previous_navbar(prev_field=None, next_field=None,
     else:
         # If None, use current field
         navbar_string += f'    <a href="linker_{current_field}.html">{current_field} (Next)</a>\n'
+
+    # Add in links to other QA products + home page
+    link_locations = generate_webserver_track_link(folder)
+
+    for linkname in link_locations:
+
+        navbar_string += f'    <a href="../{link_locations[linkname]}">{linkname}</a>\n'
+
 
     navbar_string += "</div>\n\n"
 
@@ -277,7 +377,7 @@ def make_content_div(field):
 # Functions for the bandpass plots, not the per field plots
 
 
-def make_bandpass_all_html_links(folder, bandpass_plots, ms_info_dict):
+def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_dict):
     '''
     Make and save all html files for linking the interactive plots
     together.
@@ -309,7 +409,9 @@ def make_bandpass_all_html_links(folder, bandpass_plots, ms_info_dict):
         if field_file.exists():
             field_file.unlink()
 
-        print(make_plot_bandpass_html_page(bandpass_plots, active_idx=i),
+        print(make_plot_bandpass_html_page(track_folder,
+                                           bandpass_plots,
+                                           active_idx=i),
               file=open(field_file, 'a'))
 
 
@@ -337,14 +439,14 @@ def make_index_bandpass_html_page(bandpass_plots, ms_info_dict):
     return html_string
 
 
-def make_plot_bandpass_html_page(bandpass_plots, active_idx=0):
+def make_plot_bandpass_html_page(folder, bandpass_plots, active_idx=0):
 
     html_string = make_html_preamble()
 
     prev_field = active_idx - 1 if active_idx != 0 else None
     next_field = active_idx + 1 if active_idx < len(bandpass_plots) - 1 else None
 
-    html_string += make_next_previous_navbar_bandpass(prev_field, next_field)
+    html_string += make_next_previous_navbar_bandpass(folder, prev_field, next_field)
 
     html_string += make_sidebar_bandpass(bandpass_plots, active_idx=active_idx)
 
@@ -355,14 +457,11 @@ def make_plot_bandpass_html_page(bandpass_plots, active_idx=0):
     return html_string
 
 
-def make_next_previous_navbar_bandpass(prev_field=None, next_field=None,
+def make_next_previous_navbar_bandpass(folder, prev_field=None, next_field=None,
                                        current_field=None):
     '''
     Navbar links
     '''
-
-    if prev_field is None and next_field is None:
-        return ""
 
     navbar_string = '<div class="navbar">\n'
 
@@ -377,6 +476,12 @@ def make_next_previous_navbar_bandpass(prev_field=None, next_field=None,
     else:
         # If None, use current field
         navbar_string += f'    <a href="linker_bp_{current_field}.html">Bandpass Plot {current_field} (Next)</a>\n'
+
+    link_locations = generate_webserver_track_link(folder)
+
+    for linkname in link_locations:
+
+        navbar_string += f'    <a href="../{link_locations[linkname]}">{linkname}</a>\n'
 
     navbar_string += "</div>\n\n"
 
