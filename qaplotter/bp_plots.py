@@ -26,35 +26,48 @@ def bp_amp_phase_figures(table_dict, meta_dict,
     spw_keys = sorted(list(table_dict['amp'].keys()))
 
     nfigures = nspws // nspw_per_figure
+    if nspws % nspw_per_figure > 0:
+        nfigures += 1
     # if nspws % nspw_per_figure != 0:
     #     nfigures += 1
 
     # Count as we add in SPW plots
-    spw_num = 0
+    spw_nums = list(table_dict['amp'].keys())
+    spw_nums.sort()
+
+    print(f"Number of spw nums: {spw_nums}")
+    print(f"Making {nfigures} bandpass plots")
 
     markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
 
     all_figs = []
 
+
     for nn in range(nfigures):
 
-        subplot_titles = [f"SPW {spw_keys[spw_num + jj]}" for jj in range(4)
-                          if spw_num + jj <= len(spw_keys)]
+        # Grab the new few titles:
+        subplot_titles = []
 
-        fig = make_subplots(rows=2, cols=nspw_per_figure,
+        ncols = nspw_per_figure
+        for jj in range(4):
+            if nspw_per_figure * nn + jj < len(spw_nums):
+                subplot_titles.append(f"SPW {spw_keys[nspw_per_figure * nn + jj]}")
+            else:
+                ncols = jj
+
+        fig = make_subplots(rows=2, cols=ncols,
                             subplot_titles=subplot_titles)
 
         # Loop through for each SPW
-        for ii in range(nspw_per_figure):
+        for ii in range(ncols):
 
-            if spw_num >= nspws:
-                break
+            spw_num = spw_nums[nspw_per_figure * nn + ii]
 
             # Make an amp vs freq and phase vs freq plot for each
 
             for key in table_dict.keys():
 
-                tab_data = table_dict[key][spw_keys[spw_num]]
+                tab_data = table_dict[key][spw_num]
 
                 corrs = np.unique(tab_data['corr'].tolist())
 
@@ -103,21 +116,30 @@ def bp_amp_phase_figures(table_dict, meta_dict,
 
         for i in range(nspw_per_figure * 2):
 
-            if i == 0:
-                fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
-            else:
-                fig['layout'][f'xaxis{i+1}']['title'] = 'Frequency (GHz)'
+            try:
+                if i == 0:
+                    fig['layout']['xaxis']['title'] = 'Frequency (GHz)'
+                else:
+                    fig['layout'][f'xaxis{i+1}']['title'] = 'Frequency (GHz)'
+            except KeyError:
+                pass
 
         for i in range(nspw_per_figure):
 
-            if i == 0:
-                fig['layout']['yaxis']['title'] = 'Amplitude'
-            else:
-                fig['layout'][f'yaxis{i+1}']['title'] = 'Amplitude'
+            try:
+                if i == 0:
+                    fig['layout']['yaxis']['title'] = 'Amplitude'
+                else:
+                    fig['layout'][f'yaxis{i+1}']['title'] = 'Amplitude'
+            except KeyError:
+                pass
 
         for i in range(nspw_per_figure):
 
-            fig['layout'][f'yaxis{i+1+nspw_per_figure}']['title'] = 'Phase'
+            try:
+                fig['layout'][f'yaxis{i+1+nspw_per_figure}']['title'] = 'Phase'
+            except KeyError:
+                pass
 
         meta = meta_dict['amp'][spw_keys[0]]
 
@@ -131,4 +153,3 @@ def bp_amp_phase_figures(table_dict, meta_dict,
         all_figs.append(fig)
 
     return all_figs
-
