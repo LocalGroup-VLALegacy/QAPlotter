@@ -5,10 +5,10 @@ import os
 from .utils import read_field_data_tables, read_bpcal_data_tables
 from .field_plots import target_scan_figure, calibrator_scan_figure
 from .bp_plots import bp_amp_phase_figures
-from .html_linking import make_all_html_links, make_bandpass_all_html_links
+from .html_linking import make_all_html_links, make_bandpass_all_html_links, make_html_homepage
 
 
-def make_field_plots(folder, output_folder):
+def make_field_plots(track_folder, folder, output_folder):
     '''
     Make all scan plots into an HTML for each target.
     '''
@@ -50,10 +50,10 @@ def make_field_plots(folder, output_folder):
         fig.write_html(f"{output_folder}/{out_html_name}")
 
     # Make the linking files into the same folder.
-    make_all_html_links(output_folder, fieldnames, meta_dict_0)
+    make_all_html_links(track_folder, output_folder, fieldnames, meta_dict_0)
 
 
-def make_BP_plots(folder, output_folder):
+def make_BP_plots(track_folder, folder, output_folder):
 
     table_dict, meta_dict = read_bpcal_data_tables(folder)
 
@@ -75,10 +75,11 @@ def make_BP_plots(folder, output_folder):
 
         fig_names.append(out_html_name)
 
-    make_bandpass_all_html_links(output_folder, fig_names, meta_dict_0)
+    make_bandpass_all_html_links(track_folder, output_folder, fig_names, meta_dict_0)
 
 
-def make_all_plots(folder_fields="scan_plots_txt",
+def make_all_plots(msname=None,
+                   folder_fields="scan_plots_txt",
                    output_folder_fields="scan_plots_QAplots",
                    folder_BPs="finalBPcal_txt",
                    output_folder_BPs="finalBPcal_QAplots"):
@@ -101,6 +102,20 @@ def make_all_plots(folder_fields="scan_plots_txt",
 
     '''
 
-    make_field_plots(folder_fields, output_folder_fields)
+    # TODO: add a metadata reader. Most likely include this as a save file from the pipeline to be read in.
+    # This will eventually be used to contain more info about the track.
+    # For now, it's just the name. We default to the parent folder's name when none is given.
+    ms_info_dict = {}
 
-    make_BP_plots(folder_BPs, output_folder_BPs)
+    if msname is None:
+        msname = os.path.abspath(".").split("/")[-1]
+
+    ms_info_dict['vis'] = msname
+
+    track_folder = msname
+
+    make_html_homepage(".", ms_info_dict)
+
+    make_field_plots(track_folder, folder_fields, output_folder_fields)
+
+    make_BP_plots(track_folder, folder_BPs, output_folder_BPs)
