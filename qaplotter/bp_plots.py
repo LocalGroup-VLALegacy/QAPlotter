@@ -54,6 +54,7 @@ def bp_amp_phase_figures(table_dict, meta_dict,
                 subplot_titles.append(f"SPW {spw_keys[nspw_per_figure * nn + jj]}")
             else:
                 ncols = jj
+                break
 
         fig = make_subplots(rows=2, cols=ncols,
                             subplot_titles=subplot_titles)
