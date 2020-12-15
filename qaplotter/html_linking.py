@@ -37,6 +37,8 @@ def generate_webserver_track_link(track_name):
 
     track_links['Continuum BP QA Plots'] = "finalBPcal_QAplots/index.html"
 
+    track_links['Field Names'] = "scan_plots_QAplots/fieldnames.txt"
+
     return track_links
 
 
@@ -119,7 +121,8 @@ def make_all_html_links(track_folder, folder, field_list, ms_info_dict):
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_html_page(track_folder, field_list, ms_info_dict), file=open(index_file, 'a'))
+    print(make_index_html_page(track_folder, field_list, ms_info_dict),
+          file=open(index_file, 'a'))
 
     # Loop through the fields
     for i, field in enumerate(field_list):
