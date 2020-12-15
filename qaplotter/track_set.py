@@ -8,7 +8,7 @@ from .bp_plots import bp_amp_phase_figures
 from .html_linking import make_all_html_links, make_bandpass_all_html_links, make_html_homepage
 
 
-def make_field_plots(track_folder, folder, output_folder):
+def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False):
     '''
     Make all scan plots into an HTML for each target.
     '''
@@ -27,6 +27,17 @@ def make_field_plots(track_folder, folder, output_folder):
 
     # Get unique names only
     fieldnames = sorted(list(set(fieldnames)))
+
+    if save_fieldnames:
+        field_txtfilename = f"{output_folder}/fieldnames.txt"
+
+        if os.path.exists(field_txtfilename):
+            os.remove(field_txtfilename)
+
+        with open(field_txtfilename, 'w') as f:
+
+            for field in fieldnames:
+                f.write(f"{field}\n")
 
     meta_dict_0 = read_field_data_tables(fieldnames[0], folder)[1]['amp_time']
 
@@ -82,7 +93,8 @@ def make_all_plots(msname=None,
                    folder_fields="scan_plots_txt",
                    output_folder_fields="scan_plots_QAplots",
                    folder_BPs="finalBPcal_txt",
-                   output_folder_BPs="finalBPcal_QAplots"):
+                   output_folder_BPs="finalBPcal_QAplots",
+                   save_fieldnames=True):
     '''
     Make both the field and BP cal plots based on the standard pipeline folder names defined
     in the ReductionPipeline package (https://github.com/LocalGroup-VLALegacy/ReductionPipeline).
@@ -116,6 +128,7 @@ def make_all_plots(msname=None,
 
     make_html_homepage(".", ms_info_dict)
 
-    make_field_plots(track_folder, folder_fields, output_folder_fields)
+    make_field_plots(track_folder, folder_fields, output_folder_fields,
+                     save_fieldnames=save_fieldnames)
 
     make_BP_plots(track_folder, folder_BPs, output_folder_BPs)
