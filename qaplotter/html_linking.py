@@ -26,7 +26,10 @@ def generate_webserver_track_link(track_name):
 
     track_links = {}
 
-    track_links["Webserver Home"] = return_webserver_link()
+    # track_links["Webserver Home"] = return_webserver_link()
+    track_links["Webserver Home"] = "../../../../"
+
+    track_links["Project Home"] = "../../"
 
     # track_links["Track Home"] = f"{track_name}"
     track_links["Track Home"] = "index.html"
@@ -161,7 +164,7 @@ def make_index_html_page(folder, field_list, ms_info_dict):
 
     # Embed the weblog into the main page.
     html_string += '\n'
-    html_string += '<iframe src="weblog/html/index.html" height="90%" width=90%>\n'
+    html_string += '<iframe src="weblog/html/index.html" height="100%" width=90%>\n'
     html_string += 'If you are seeing this, you need a browser understands IFrames.\n'
     html_string += '</iframe>\n'
 
