@@ -52,7 +52,7 @@ def make_index_html_homepage(folder, ms_info_dict):
 
     link_locations = generate_webserver_track_link(folder)
 
-    html_string = '<div class="navbar">\n'
+    html_string += '<div class="navbar">\n'
 
     for linkname in link_locations:
 
