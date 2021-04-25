@@ -35,7 +35,7 @@ def generate_webserver_track_link(track_name):
 
     track_links['Field QA Plots'] = "scan_plots_QAplots/index.html"
 
-    track_links['BP QA Plots'] = "finalBPcal_QAplots/index.html"
+    track_links['Bandpass QA Plots'] = "finalBPcal_QAplots/index.html"
 
     track_links['Field Names'] = "scan_plots_QAplots/fieldnames.txt"
 
@@ -158,6 +158,12 @@ def make_index_html_page(folder, field_list, ms_info_dict):
         html_string += f'<p>UTC datetime: {utc_datetime.strftime("%Y/%m/%d/%H:%M")}</p>\n'
     except (AssertionError, ValueError):
         pass
+
+    # Embed the weblog into the main page.
+    html_string += '\n'
+    html_string += '<iframe src="weblog/html/index.html" height="90%" width=90%>\n'
+    html_string += 'If you are seeing this, you need a browser understands IFrames.\n'
+    html_string += '</iframe>\n'
 
     html_string += '</div>\n\n'
 
