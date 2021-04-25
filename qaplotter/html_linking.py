@@ -31,11 +31,11 @@ def generate_webserver_track_link(track_name):
     # track_links["Track Home"] = f"{track_name}"
     track_links["Track Home"] = "index.html"
 
-    track_links["Continuum Weblog"] = "weblog/html/index.html"
+    track_links["Weblog"] = "weblog/html/index.html"
 
-    track_links['Continuum Field QA Plots'] = "scan_plots_QAplots/index.html"
+    track_links['Field QA Plots'] = "scan_plots_QAplots/index.html"
 
-    track_links['Continuum BP QA Plots'] = "finalBPcal_QAplots/index.html"
+    track_links['BP QA Plots'] = "finalBPcal_QAplots/index.html"
 
     track_links['Field Names'] = "scan_plots_QAplots/fieldnames.txt"
 
