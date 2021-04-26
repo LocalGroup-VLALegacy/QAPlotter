@@ -94,7 +94,8 @@ def make_all_plots(msname=None,
                    output_folder_fields="scan_plots_QAplots",
                    folder_BPs="finalBPcal_txt",
                    output_folder_BPs="finalBPcal_QAplots",
-                   save_fieldnames=True):
+                   save_fieldnames=True,
+                   flagging_sheet_link=None):
     '''
     Make both the field and BP cal plots based on the standard pipeline folder names defined
     in the ReductionPipeline package (https://github.com/LocalGroup-VLALegacy/ReductionPipeline).
@@ -111,6 +112,8 @@ def make_all_plots(msname=None,
         Folder where the txt files for bandpass solutions per SPW are located.
     output_folder_BPs : str, optional
         Output folder to place the interactive HTML figures per bandpass SPW solution.
+    flagging_sheet_link : str, optional
+        Link to the sheet where manual flags can be added.
 
     '''
 
@@ -126,7 +129,7 @@ def make_all_plots(msname=None,
 
     track_folder = msname
 
-    make_html_homepage(".", ms_info_dict)
+    make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link)
 
     make_field_plots(track_folder, folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames)

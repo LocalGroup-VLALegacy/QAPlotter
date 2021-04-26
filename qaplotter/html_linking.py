@@ -16,7 +16,7 @@ def return_webserver_link():
     return "../"
 
 
-def generate_webserver_track_link(track_name):
+def generate_webserver_track_link(flagging_sheet_link):
     '''
     Return a link to the home page for a given track.
 
@@ -31,8 +31,12 @@ def generate_webserver_track_link(track_name):
 
     track_links["Project Home"] = "../../"
 
-    # track_links["Track Home"] = f"{track_name}"
     track_links["Track Home"] = "index.html"
+
+    if flagging_sheet_link is not None:
+        track_links["Flagging Sheet"] = flagging_sheet_link
+    else:
+        track_links["Flagging Sheet"] = ""
 
     track_links["Weblog"] = "weblog/html/index.html"
 
@@ -45,7 +49,7 @@ def generate_webserver_track_link(track_name):
     return track_links
 
 
-def make_index_html_homepage(folder, ms_info_dict):
+def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
     '''
     Home page for the track with links to the weblogs, QA plots, etc.
     '''
@@ -53,7 +57,7 @@ def make_index_html_homepage(folder, ms_info_dict):
 
     html_string = make_html_preamble()
 
-    link_locations = generate_webserver_track_link(folder)
+    link_locations = generate_webserver_track_link(flagging_sheet_link)
 
     html_string += '<div class="navbar">\n'
 
@@ -81,7 +85,7 @@ def make_index_html_homepage(folder, ms_info_dict):
     return html_string
 
 
-def make_html_homepage(folder, ms_info_dict):
+def make_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
 
     mypath = Path(folder)
 
@@ -99,7 +103,9 @@ def make_html_homepage(folder, ms_info_dict):
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_html_homepage(folder, ms_info_dict), file=open(index_file, 'a'))
+    print(make_index_html_homepage(folder, ms_info_dict,
+                                   flagging_sheet_link=flagging_sheet_link),
+          file=open(index_file, 'a'))
 
 
 def make_all_html_links(track_folder, folder, field_list, ms_info_dict):
