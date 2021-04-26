@@ -108,7 +108,8 @@ def make_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
           file=open(index_file, 'a'))
 
 
-def make_all_html_links(track_folder, folder, field_list, ms_info_dict):
+def make_all_html_links(track_folder, folder, field_list, ms_info_dict,
+                        flagging_sheet_link=None):
     '''
     Make and save all html files for linking the interactive plots
     together.
@@ -130,7 +131,8 @@ def make_all_html_links(track_folder, folder, field_list, ms_info_dict):
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_html_page(track_folder, field_list, ms_info_dict),
+    print(make_index_html_page(track_folder, field_list, ms_info_dict,
+                               flagging_sheet_link=flagging_sheet_link),
           file=open(index_file, 'a'))
 
     # Loop through the fields
@@ -145,7 +147,7 @@ def make_all_html_links(track_folder, folder, field_list, ms_info_dict):
               file=open(field_file, 'a'))
 
 
-def make_index_html_page(folder, field_list, ms_info_dict):
+def make_index_html_page(folder, field_list, ms_info_dict, flagging_sheet_link=None):
 
     html_string = make_html_preamble()
 
@@ -153,7 +155,8 @@ def make_index_html_page(folder, field_list, ms_info_dict):
     active_idx = 0
     html_string += make_next_previous_navbar(folder, prev_field=None,
                                              next_field=field_list[min(active_idx + 1, len(field_list))],
-                                             current_field=field_list[active_idx])
+                                             current_field=field_list[active_idx],
+                                             flagging_sheet_link=flagging_sheet_link)
 
     html_string += make_sidebar(field_list, active_idx=None)
 
@@ -320,7 +323,7 @@ def make_html_suffix():
     return html_suffix_string
 
 
-def make_next_previous_navbar(folder, prev_field=None, next_field=None,
+def make_next_previous_navbar(flagging_sheet_link, prev_field=None, next_field=None,
                               current_field=None):
     '''
     Navbar links
@@ -344,7 +347,7 @@ def make_next_previous_navbar(folder, prev_field=None, next_field=None,
         navbar_string += f'    <a href="linker_{current_field}.html">{current_field} (Next)</a>\n'
 
     # Add in links to other QA products + home page
-    link_locations = generate_webserver_track_link(folder)
+    link_locations = generate_webserver_track_link(flagging_sheet_link)
 
     for linkname in link_locations:
 
@@ -398,7 +401,8 @@ def make_content_div(field):
 # Functions for the bandpass plots, not the per field plots
 
 
-def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_dict):
+def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_dict,
+                                 flagging_sheet_link=None):
     '''
     Make and save all html files for linking the interactive plots
     together.
@@ -420,7 +424,9 @@ def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_d
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_bandpass_html_page(track_folder, bandpass_plots, ms_info_dict), file=open(index_file, 'a'))
+    print(make_index_bandpass_html_page(track_folder, bandpass_plots, ms_info_dict,
+                                        flagging_sheet_link=flagging_sheet_link),
+         file=open(index_file, 'a'))
 
     # Loop through the fields
     for i, bpplot in enumerate(bandpass_plots):
@@ -436,7 +442,7 @@ def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_d
               file=open(field_file, 'a'))
 
 
-def make_index_bandpass_html_page(folder, bandpass_plots, ms_info_dict):
+def make_index_bandpass_html_page(folder, bandpass_plots, ms_info_dict, flagging_sheet_link=None):
 
     html_string = make_html_preamble()
 
@@ -489,7 +495,7 @@ def make_plot_bandpass_html_page(folder, bandpass_plots, active_idx=0):
 
 
 def make_next_previous_navbar_bandpass(folder, prev_field=None, next_field=None,
-                                       current_field=None):
+                                       current_field=None, flagging_sheet_link=None):
     '''
     Navbar links
     '''
@@ -508,7 +514,7 @@ def make_next_previous_navbar_bandpass(folder, prev_field=None, next_field=None,
         # If None, use current field
         navbar_string += f'    <a href="linker_bp_{current_field}.html">Bandpass Plot {current_field} (Next)</a>\n'
 
-    link_locations = generate_webserver_track_link(folder)
+    link_locations = generate_webserver_track_link(flagging_sheet_link)
 
     for linkname in link_locations:
 

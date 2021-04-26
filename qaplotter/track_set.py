@@ -8,7 +8,8 @@ from .bp_plots import bp_amp_phase_figures
 from .html_linking import make_all_html_links, make_bandpass_all_html_links, make_html_homepage
 
 
-def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False):
+def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
+                     flagging_sheet_link=None):
     '''
     Make all scan plots into an HTML for each target.
     '''
@@ -61,10 +62,12 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False)
         fig.write_html(f"{output_folder}/{out_html_name}")
 
     # Make the linking files into the same folder.
-    make_all_html_links(track_folder, output_folder, fieldnames, meta_dict_0)
+    make_all_html_links(track_folder, output_folder, fieldnames, meta_dict_0,
+                        flagging_sheet_link=flagging_sheet_link)
 
 
-def make_BP_plots(track_folder, folder, output_folder):
+def make_BP_plots(track_folder, folder, output_folder,
+                  flagging_sheet_link=None):
 
     table_dict, meta_dict = read_bpcal_data_tables(folder)
 
@@ -86,7 +89,8 @@ def make_BP_plots(track_folder, folder, output_folder):
 
         fig_names.append(out_html_name)
 
-    make_bandpass_all_html_links(track_folder, output_folder, fig_names, meta_dict_0)
+    make_bandpass_all_html_links(track_folder, output_folder, fig_names, meta_dict_0,
+                                 flagging_sheet_link=flagging_sheet_link)
 
 
 def make_all_plots(msname=None,
@@ -132,6 +136,8 @@ def make_all_plots(msname=None,
     make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link)
 
     make_field_plots(track_folder, folder_fields, output_folder_fields,
-                     save_fieldnames=save_fieldnames)
+                     save_fieldnames=save_fieldnames,
+                     flagging_sheet_link=flagging_sheet_link)
 
-    make_BP_plots(track_folder, folder_BPs, output_folder_BPs)
+    make_BP_plots(track_folder, folder_BPs, output_folder_BPs,
+                  flagging_sheet_link=flagging_sheet_link)
