@@ -137,8 +137,7 @@ def make_all_html_links(track_folder, folder, field_list, ms_info_dict,
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_html_page(track_folder, field_list, ms_info_dict,
-                               flagging_sheet_link=flagging_sheet_link),
+    print(make_index_html_page(flagging_sheet_link, field_list, ms_info_dict),
           file=open(index_file, 'a'))
 
     # Loop through the fields
@@ -149,11 +148,11 @@ def make_all_html_links(track_folder, folder, field_list, ms_info_dict,
         if field_file.exists():
             field_file.unlink()
 
-        print(make_plot_html_page(track_folder, field_list, active_idx=i),
+        print(make_plot_html_page(flagging_sheet_link, field_list, active_idx=i),
               file=open(field_file, 'a'))
 
 
-def make_index_html_page(folder, field_list, ms_info_dict, flagging_sheet_link=None):
+def make_index_html_page(flagging_sheet_link, field_list, ms_info_dict):
 
     html_string = make_html_preamble()
 
@@ -183,14 +182,14 @@ def make_index_html_page(folder, field_list, ms_info_dict, flagging_sheet_link=N
     return html_string
 
 
-def make_plot_html_page(folder, field_list, active_idx=0):
+def make_plot_html_page(flagging_sheet_link, field_list, active_idx=0):
 
     html_string = make_html_preamble()
 
     prev_field = field_list[active_idx - 1] if active_idx != 0 else None
     next_field = field_list[active_idx + 1] if active_idx < len(field_list) - 1 else None
 
-    html_string += make_next_previous_navbar(folder, prev_field, next_field,
+    html_string += make_next_previous_navbar(flagging_sheet_link, prev_field, next_field,
                                              current_field=field_list[active_idx])
 
     html_string += make_sidebar(field_list, active_idx=active_idx)
@@ -423,8 +422,7 @@ def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_d
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_bandpass_html_page(track_folder, bandpass_plots, ms_info_dict,
-                                        flagging_sheet_link=flagging_sheet_link),
+    print(make_index_bandpass_html_page(flagging_sheet_link, bandpass_plots, ms_info_dict),
          file=open(index_file, 'a'))
 
     # Loop through the fields
@@ -435,13 +433,13 @@ def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_d
         if field_file.exists():
             field_file.unlink()
 
-        print(make_plot_bandpass_html_page(track_folder,
+        print(make_plot_bandpass_html_page(flagging_sheet_link,
                                            bandpass_plots,
                                            active_idx=i),
               file=open(field_file, 'a'))
 
 
-def make_index_bandpass_html_page(folder, bandpass_plots, ms_info_dict, flagging_sheet_link=None):
+def make_index_bandpass_html_page(flagging_sheet_link, bandpass_plots, ms_info_dict):
 
     html_string = make_html_preamble()
 
@@ -449,7 +447,7 @@ def make_index_bandpass_html_page(folder, bandpass_plots, ms_info_dict, flagging
     active_idx = 0
     next_field = active_idx + 1 if active_idx < len(bandpass_plots) - 1 else None
 
-    html_string += make_next_previous_navbar_bandpass(folder,
+    html_string += make_next_previous_navbar_bandpass(flagging_sheet_link,
                                                       prev_field=None,
                                                       next_field=next_field,
                                                       current_field=active_idx)
@@ -474,14 +472,14 @@ def make_index_bandpass_html_page(folder, bandpass_plots, ms_info_dict, flagging
     return html_string
 
 
-def make_plot_bandpass_html_page(folder, bandpass_plots, active_idx=0):
+def make_plot_bandpass_html_page(flagging_sheet_link, bandpass_plots, active_idx=0):
 
     html_string = make_html_preamble()
 
     prev_field = active_idx - 1 if active_idx != 0 else None
     next_field = active_idx + 1 if active_idx < len(bandpass_plots) - 1 else None
 
-    html_string += make_next_previous_navbar_bandpass(folder, prev_field, next_field,
+    html_string += make_next_previous_navbar_bandpass(flagging_sheet_link, prev_field, next_field,
                                                       current_field=active_idx)
 
     html_string += make_sidebar_bandpass(bandpass_plots, active_idx=active_idx)
