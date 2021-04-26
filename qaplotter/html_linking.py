@@ -78,6 +78,12 @@ def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
     except (AssertionError, ValueError):
         pass
 
+    # Embed the weblog into the main page.
+    html_string += '\n'
+    html_string += '<iframe src="weblog/html/index.html" height="100%" width=90%>\n'
+    html_string += 'If you are seeing this, you need a browser understands IFrames.\n'
+    html_string += '</iframe>\n'
+
     html_string += '</div>\n\n'
 
     html_string += make_html_suffix()
@@ -153,10 +159,9 @@ def make_index_html_page(folder, field_list, ms_info_dict, flagging_sheet_link=N
 
     # Add navigation bar with link to other QA products
     active_idx = 0
-    html_string += make_next_previous_navbar(folder, prev_field=None,
+    html_string += make_next_previous_navbar(flagging_sheet_link, prev_field=None,
                                              next_field=field_list[min(active_idx + 1, len(field_list))],
-                                             current_field=field_list[active_idx],
-                                             flagging_sheet_link=flagging_sheet_link)
+                                             current_field=field_list[active_idx])
 
     html_string += make_sidebar(field_list, active_idx=None)
 
@@ -170,12 +175,6 @@ def make_index_html_page(folder, field_list, ms_info_dict, flagging_sheet_link=N
         html_string += f'<p>UTC datetime: {utc_datetime.strftime("%Y/%m/%d/%H:%M")}</p>\n'
     except (AssertionError, ValueError):
         pass
-
-    # Embed the weblog into the main page.
-    html_string += '\n'
-    html_string += '<iframe src="weblog/html/index.html" height="100%" width=90%>\n'
-    html_string += 'If you are seeing this, you need a browser understands IFrames.\n'
-    html_string += '</iframe>\n'
 
     html_string += '</div>\n\n'
 
@@ -494,8 +493,8 @@ def make_plot_bandpass_html_page(folder, bandpass_plots, active_idx=0):
     return html_string
 
 
-def make_next_previous_navbar_bandpass(folder, prev_field=None, next_field=None,
-                                       current_field=None, flagging_sheet_link=None):
+def make_next_previous_navbar_bandpass(flagging_sheet_link, prev_field=None, next_field=None,
+                                       current_field=None,):
     '''
     Navbar links
     '''
