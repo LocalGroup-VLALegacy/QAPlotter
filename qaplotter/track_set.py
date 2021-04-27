@@ -9,7 +9,7 @@ from .html_linking import make_all_html_links, make_bandpass_all_html_links, mak
 
 
 def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
-                     flagging_sheet_link=None):
+                     flagging_sheet_link=None, corrs=['RR', 'LL']):
     '''
     Make all scan plots into an HTML for each target.
     '''
@@ -49,11 +49,11 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
         # Target
         if len(table_dict.keys()) == 3:
 
-            fig = target_scan_figure(table_dict, meta_dict, show=False)
+            fig = target_scan_figure(table_dict, meta_dict, show=False, corrs=corrs)
 
         elif len(table_dict.keys()) == 8:
 
-            fig = calibrator_scan_figure(table_dict, meta_dict, show=False)
+            fig = calibrator_scan_figure(table_dict, meta_dict, show=False, corrs=corrs)
 
         else:
             raise ValueError(f"Found {len(table_dict.keys())} tables for {field} instead of 3 or 7.")
@@ -99,7 +99,8 @@ def make_all_plots(msname=None,
                    folder_BPs="finalBPcal_txt",
                    output_folder_BPs="finalBPcal_QAplots",
                    save_fieldnames=True,
-                   flagging_sheet_link=None):
+                   flagging_sheet_link=None,
+                   corrs=['RR', 'LL']):
     '''
     Make both the field and BP cal plots based on the standard pipeline folder names defined
     in the ReductionPipeline package (https://github.com/LocalGroup-VLALegacy/ReductionPipeline).
@@ -118,6 +119,9 @@ def make_all_plots(msname=None,
         Output folder to place the interactive HTML figures per bandpass SPW solution.
     flagging_sheet_link : str, optional
         Link to the sheet where manual flags can be added.
+    corrs : list, optional
+        Give which correlations to show in the plots. Default is ['LL', 'RR']. To show
+        the cross terms, give: ['LL', 'RR', 'LR', 'RL'].
 
     '''
 
@@ -137,7 +141,8 @@ def make_all_plots(msname=None,
 
     make_field_plots(track_folder, folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames,
-                     flagging_sheet_link=flagging_sheet_link)
+                     flagging_sheet_link=flagging_sheet_link,
+                     corrs=corrs)
 
     make_BP_plots(track_folder, folder_BPs, output_folder_BPs,
                   flagging_sheet_link=flagging_sheet_link)
