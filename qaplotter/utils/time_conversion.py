@@ -34,6 +34,14 @@ def vla_time_conversion(time_mjd, return_casa_string=True):
     return time
 
 
+def make_casa_timestring(x):
+
+    datetime_vals = vla_time_conversion(x)
+
+    return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
+            for dtime in datetime_vals]
+
+
 def datetime_from_msname(msname):
     """
     The VLA SDM names contain the MJD in days. Use the name
