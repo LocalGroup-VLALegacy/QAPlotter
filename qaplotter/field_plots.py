@@ -12,7 +12,8 @@ markers = ['circle', 'cross', 'triangle-up', 'triangle-down']
 
 
 def target_scan_figure(table_dict, meta_dict, show=False,
-                       scatter_plot=go.Scattergl):
+                       scatter_plot=go.Scattergl,
+                       corrs=['RR', 'LL']):
     '''
     Make a 3-panel figure for target scans.
     '''
@@ -71,7 +72,8 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
             spw_mask = tab_data['spw'] == spw
 
-            corrs = np.unique(tab_data['corr'][spw_mask].tolist())
+            if corrs is None:
+                corrs = np.unique(tab_data['corr'][spw_mask].tolist())
 
             for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
@@ -218,7 +220,8 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     return fig
 
 
-def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Scattergl):
+def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Scattergl,
+                           corrs=['RR', 'LL']):
     '''
     Make a 7-panel figure for target scans.
     '''
@@ -293,7 +296,8 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
             spw_mask = tab_data['spw'] == spw
 
-            corrs = np.unique(tab_data['corr'][spw_mask].tolist())
+            if corrs is None:
+                corrs = np.unique(tab_data['corr'][spw_mask].tolist())
 
             for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
