@@ -27,7 +27,7 @@ def generate_webserver_track_link(flagging_sheet_link):
     track_links = {}
 
     # track_links["Webserver Home"] = return_webserver_link()
-    track_links["Webserver Home"] = "../../../../"
+    track_links["Webserver Home"] = "../../../../../"
 
     track_links["Project Home"] = "../../"
 
@@ -114,8 +114,7 @@ def make_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
           file=open(index_file, 'a'))
 
 
-def make_all_html_links(track_folder, folder, field_list, ms_info_dict,
-                        flagging_sheet_link=None):
+def make_all_html_links(flagging_sheet_link, folder, field_list, ms_info_dict):
     '''
     Make and save all html files for linking the interactive plots
     together.
@@ -399,8 +398,7 @@ def make_content_div(field):
 # Functions for the calibration table plots, not the per field plots
 
 
-def make_caltable_all_html_links(track_folder, folder, cal_plots, ms_info_dict,
-                                 flagging_sheet_link=None):
+def make_caltable_all_html_links(flagging_sheet_link, folder, cal_plots, ms_info_dict):
     '''
     Make and save all html files for linking the interactive plots
     together.
@@ -448,10 +446,10 @@ def make_index_caltable_html_page(flagging_sheet_link, cal_plots, ms_info_dict):
     next_field = active_idx + 1 if active_idx < len(cal_plots) - 1 else None
 
     html_string += make_next_previous_navbar_caltables(flagging_sheet_link,
-                                                      prev_field=None,
-                                                      next_field=next_field,
-                                                      next_field_name=list(cal_plots.keys())[next_field],
-                                                      current_field=active_idx)
+                                                       prev_field=None,
+                                                       next_field=next_field,
+                                                       next_field_name=list(cal_plots.keys())[next_field],
+                                                       current_field=active_idx)
 
     html_string += make_sidebar_caltables(cal_plots, active_idx=None)
 

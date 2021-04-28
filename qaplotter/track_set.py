@@ -12,6 +12,7 @@ from .utils import (read_field_data_tables,
                     read_phasegaincal_data_tables)
 
 from .field_plots import target_scan_figure, calibrator_scan_figure
+from .bp_plots import bp_amp_phase_figures
 
 from .amp_phase_cal_plots import (phase_gain_figures, amp_gain_time_figures,
                                   delay_freq_figures, amp_gain_freq_figures)
@@ -74,8 +75,7 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
         fig.write_html(f"{output_folder}/{out_html_name}")
 
     # Make the linking files into the same folder.
-    make_all_html_links(track_folder, output_folder, fieldnames, meta_dict_0,
-                        flagging_sheet_link=flagging_sheet_link)
+    make_all_html_links(flagging_sheet_link, output_folder, fieldnames, meta_dict_0)
 
 
 def make_all_cal_plots(track_folder, folder, output_folder,
@@ -188,8 +188,7 @@ def make_all_cal_plots(track_folder, folder, output_folder,
 
         fig_names[f"{label} {i+1}"] = out_html_name
 
-    make_caltable_all_html_links(track_folder, output_folder, fig_names, meta_dict_0,
-                                 flagging_sheet_link=flagging_sheet_link)
+    make_caltable_all_html_links(flagging_sheet_link, output_folder, fig_names, meta_dict_0)
 
 
 def make_all_plots(msname=None,
@@ -240,10 +239,8 @@ def make_all_plots(msname=None,
 
     make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link)
 
-    make_field_plots(track_folder, folder_fields, output_folder_fields,
+    make_field_plots(flagging_sheet_link, folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames,
-                     flagging_sheet_link=flagging_sheet_link,
                      corrs=corrs)
 
-    make_all_cal_plots(track_folder, folder_cals, output_folder_cals,
-                       flagging_sheet_link=flagging_sheet_link)
+    make_all_cal_plots(flagging_sheet_link, folder_cals, output_folder_cals)
