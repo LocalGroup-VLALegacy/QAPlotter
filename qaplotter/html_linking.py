@@ -42,7 +42,7 @@ def generate_webserver_track_link(flagging_sheet_link):
 
     track_links['Field QA Plots'] = "scan_plots_QAplots/index.html"
 
-    track_links['Bandpass QA Plots'] = "finalBPcal_QAplots/index.html"
+    track_links['Calib QA Plots'] = "final_caltable_QAplots/index.html"
 
     track_links['Field Names'] = "scan_plots_QAplots/fieldnames.txt"
 
@@ -396,10 +396,10 @@ def make_content_div(field):
 
 
 #################################
-# Functions for the bandpass plots, not the per field plots
+# Functions for the calibration table plots, not the per field plots
 
 
-def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_dict,
+def make_caltable_all_html_links(track_folder, folder, cal_plots, ms_info_dict,
                                  flagging_sheet_link=None):
     '''
     Make and save all html files for linking the interactive plots
@@ -422,37 +422,38 @@ def make_bandpass_all_html_links(track_folder, folder, bandpass_plots, ms_info_d
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_bandpass_html_page(flagging_sheet_link, bandpass_plots, ms_info_dict),
-         file=open(index_file, 'a'))
+    print(make_index_caltable_html_page(flagging_sheet_link, cal_plots, ms_info_dict),
+          file=open(index_file, 'a'))
 
     # Loop through the fields
-    for i, bpplot in enumerate(bandpass_plots):
+    for i, calplot in enumerate(cal_plots):
 
         field_file = mypath / f"linker_bp_{i}.html"
 
         if field_file.exists():
             field_file.unlink()
 
-        print(make_plot_bandpass_html_page(flagging_sheet_link,
-                                           bandpass_plots,
+        print(make_plot_caltable_html_page(flagging_sheet_link,
+                                           cal_plots,
                                            active_idx=i),
               file=open(field_file, 'a'))
 
 
-def make_index_bandpass_html_page(flagging_sheet_link, bandpass_plots, ms_info_dict):
+def make_index_caltable_html_page(flagging_sheet_link, cal_plots, ms_info_dict):
 
     html_string = make_html_preamble()
 
     # Add links to other index files, etc.
     active_idx = 0
-    next_field = active_idx + 1 if active_idx < len(bandpass_plots) - 1 else None
+    next_field = active_idx + 1 if active_idx < len(cal_plots) - 1 else None
 
-    html_string += make_next_previous_navbar_bandpass(flagging_sheet_link,
+    html_string += make_next_previous_navbar_caltables(flagging_sheet_link,
                                                       prev_field=None,
                                                       next_field=next_field,
+                                                      next_field_name=list(cal_plots.keys())[next_field],
                                                       current_field=active_idx)
 
-    html_string += make_sidebar_bandpass(bandpass_plots, active_idx=None)
+    html_string += make_sidebar_caltables(cal_plots, active_idx=None)
 
     # Add in MS info:
     html_string += '<div class="content" id="basic">\n'
@@ -472,27 +473,39 @@ def make_index_bandpass_html_page(flagging_sheet_link, bandpass_plots, ms_info_d
     return html_string
 
 
-def make_plot_bandpass_html_page(flagging_sheet_link, bandpass_plots, active_idx=0):
+def make_plot_caltable_html_page(flagging_sheet_link, cal_plots, active_idx=0):
 
     html_string = make_html_preamble()
 
     prev_field = active_idx - 1 if active_idx != 0 else None
-    next_field = active_idx + 1 if active_idx < len(bandpass_plots) - 1 else None
+    next_field = active_idx + 1 if active_idx < len(cal_plots) - 1 else None
 
-    html_string += make_next_previous_navbar_bandpass(flagging_sheet_link, prev_field, next_field,
-                                                      current_field=active_idx)
+    cal_keys = list(cal_plots.keys())
 
-    html_string += make_sidebar_bandpass(bandpass_plots, active_idx=active_idx)
+    current_field_name = cal_keys[active_idx]
+    prev_field_name = cal_keys[prev_field] if prev_field is not None else None
+    next_field_name = cal_keys[next_field] if next_field is not None else None
 
-    html_string += make_content_bandpass_div(bandpass_plots[active_idx])
+    html_string += make_next_previous_navbar_caltables(flagging_sheet_link,
+                                                       prev_field=prev_field,
+                                                       prev_field_name=prev_field_name,
+                                                       next_field=next_field,
+                                                       next_field_name=next_field_name,
+                                                       current_field=active_idx,
+                                                       current_field_name=current_field_name)
+
+    html_string += make_sidebar_caltables(cal_plots, active_idx=active_idx)
+
+    html_string += make_content_caltables_div(cal_plots[current_field_name])
 
     html_string += make_html_suffix()
 
     return html_string
 
 
-def make_next_previous_navbar_bandpass(flagging_sheet_link, prev_field=None, next_field=None,
-                                       current_field=None,):
+def make_next_previous_navbar_caltables(flagging_sheet_link, prev_field=None, next_field=None,
+                                        prev_field_name=None, next_field_name=None,
+                                        current_field=None, current_field_name=None):
     '''
     Navbar links
     '''
@@ -500,16 +513,16 @@ def make_next_previous_navbar_bandpass(flagging_sheet_link, prev_field=None, nex
     navbar_string = '<div class="navbar">\n'
 
     if prev_field is not None:
-        navbar_string += f'    <a href="linker_bp_{prev_field}.html">Bandpass Plot {prev_field} (Previous)</a>\n'
+        navbar_string += f'    <a href="linker_bp_{prev_field}.html">{prev_field_name} (Previous)</a>\n'
     else:
         # If None, use current field
-        navbar_string += f'    <a href="linker_bp_{current_field}.html">Bandpass Plot {current_field} (Previous)</a>\n'
+        navbar_string += f'    <a href="linker_bp_{current_field}.html">{current_field_name} (Previous)</a>\n'
 
     if next_field is not None:
-        navbar_string += f'    <a href="linker_bp_{next_field}.html">Bandpass Plot {next_field} (Next)</a>\n'
+        navbar_string += f'    <a href="linker_bp_{next_field}.html">{next_field_name} (Next)</a>\n'
     else:
         # If None, use current field
-        navbar_string += f'    <a href="linker_bp_{current_field}.html">Bandpass Plot {current_field} (Next)</a>\n'
+        navbar_string += f'    <a href="linker_bp_{current_field}.html">{current_field_name} (Next)</a>\n'
 
     link_locations = generate_webserver_track_link(flagging_sheet_link)
 
@@ -522,7 +535,7 @@ def make_next_previous_navbar_bandpass(flagging_sheet_link, prev_field=None, nex
     return navbar_string
 
 
-def make_sidebar_bandpass(bandpass_plots, active_idx=0):
+def make_sidebar_caltables(cal_plots, active_idx=0):
     '''
     Persistent side bar with all field names. For quick switching.
     '''
@@ -534,7 +547,7 @@ def make_sidebar_bandpass(bandpass_plots, active_idx=0):
     else:
         sidebar_string += '    <a class="" href="index.html">Home</a>\n'
 
-    for i, bpplot in enumerate(bandpass_plots):
+    for i, cal_name in enumerate(cal_plots):
 
         # Set as active
         if i == active_idx:
@@ -542,18 +555,18 @@ def make_sidebar_bandpass(bandpass_plots, active_idx=0):
         else:
             class_is = ""
 
-        sidebar_string += f'    <a class="{class_is}" href="linker_bp_{i}.html">Bandpass {i}</a>\n'
+        sidebar_string += f'    <a class="{class_is}" href="linker_bp_{i}.html">{cal_name}</a>\n'
 
     sidebar_string += '</div>\n\n'
 
     return sidebar_string
 
 
-def make_content_bandpass_div(bandpass_plot):
+def make_content_caltables_div(cal_plot):
 
-    content_string = f'<div class="content" id="{bandpass_plot.rstrip(".html")[-1]}">\n'
+    content_string = f'<div class="content" id="{cal_plot.rstrip(".html")[-1]}">\n'
 
-    content_string += f'    <iframe id="igraph" scrolling="no" style="border:none;" seamless="seamless" src="{bandpass_plot}" height="1000" width="100%"></iframe>\n'
+    content_string += f'    <iframe id="igraph" scrolling="no" style="border:none;" seamless="seamless" src="{cal_plot}" height="1000" width="100%"></iframe>\n'
 
     content_string += '</div>\n\n'
 

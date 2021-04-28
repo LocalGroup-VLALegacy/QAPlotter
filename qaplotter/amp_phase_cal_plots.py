@@ -51,7 +51,7 @@ def phase_gain_figures(table_dict, meta_dict,
     ant_nums = list(table_dict[keyname].keys())
     ant_nums.sort()
 
-    print(f"Number of ant nums: {ant_nums}")
+    print(f"Number of ants: {ant_nums}")
     print(f"Making {nfigures} cal plots")
 
     markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
@@ -69,7 +69,6 @@ def phase_gain_figures(table_dict, meta_dict,
         ncols = this_nant_per_figure // 2
         # TODO: Should this be hard-coded? It's easier for now, IMO.
         nrows = 2
-        print(f"Ncol: {ncols}, Nrow: {nrows}")
         for jj in range(this_nant_per_figure):
             ant_num = this_nant_per_figure * nn + jj
             if ant_num < len(ant_nums):
@@ -234,7 +233,7 @@ def amp_gain_time_figures(table_dict, meta_dict,
     ant_nums = list(table_dict[keyname].keys())
     ant_nums.sort()
 
-    print(f"Number of ant nums: {ant_nums}")
+    print(f"Number of ants: {ant_nums}")
     print(f"Making {nfigures} cal plots")
 
     markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
@@ -264,7 +263,6 @@ def amp_gain_time_figures(table_dict, meta_dict,
         ncols = this_nant_per_figure // 2
         # TODO: Should this be hard-coded? It's easier for now, IMO.
         nrows = 2
-        print(f"Ncol: {ncols}, Nrow: {nrows}")
         for jj in range(this_nant_per_figure):
             ant_num = this_nant_per_figure * nn + jj
             if ant_num < len(ant_nums):
@@ -428,7 +426,7 @@ def delay_freq_figures(table_dict, meta_dict,
     ant_nums = list(table_dict[keyname].keys())
     ant_nums.sort()
 
-    print(f"Number of ant nums: {ant_nums}")
+    print(f"Number of ants: {ant_nums}")
     print(f"Making {nfigures} cal plots")
 
     markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
@@ -462,7 +460,6 @@ def delay_freq_figures(table_dict, meta_dict,
         ncols = this_nant_per_figure // 2
         # TODO: Should this be hard-coded? It's easier for now, IMO.
         nrows = 2
-        print(f"Ncol: {ncols}, Nrow: {nrows}")
         for jj in range(this_nant_per_figure):
             ant_num = this_nant_per_figure * nn + jj
             if ant_num < len(ant_nums):
@@ -619,7 +616,7 @@ def amp_gain_freq_figures(table_dict, meta_dict,
     ant_nums = list(table_dict[keyname].keys())
     ant_nums.sort()
 
-    print(f"Number of ant nums: {ant_nums}")
+    print(f"Number of ants: {ant_nums}")
     print(f"Making {nfigures} cal plots")
 
     markers = ['circle', 'diamond', 'triangle-up', 'triangle-down']
@@ -649,7 +646,6 @@ def amp_gain_freq_figures(table_dict, meta_dict,
         ncols = this_nant_per_figure // 2
         # TODO: Should this be hard-coded? It's easier for now, IMO.
         nrows = 2
-        print(f"Ncol: {ncols}, Nrow: {nrows}")
         for jj in range(this_nant_per_figure):
             ant_num = this_nant_per_figure * nn + jj
             if ant_num < len(ant_nums):

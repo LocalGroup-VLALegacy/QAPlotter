@@ -17,7 +17,9 @@ from .bp_plots import bp_amp_phase_figures
 from .amp_phase_cal_plots import (phase_gain_figures, amp_gain_time_figures,
                                   delay_freq_figures, amp_gain_freq_figures)
 
-from .html_linking import make_all_html_links, make_bandpass_all_html_links, make_html_homepage
+from .html_linking import (make_all_html_links, make_html_homepage,
+                           make_caltable_all_html_links)
+                        #  make_bandpass_all_html_links)
 
 
 def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
@@ -121,30 +123,33 @@ def make_all_cal_plots(track_folder, folder, output_folder,
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
-    fig_names = []
+    fig_names = {}
+    label = 'Bandpass'
 
     for i, fig in enumerate(figs):
 
         out_html_name = f"BP_amp_phase_plotly_interactive_{i}.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
 
-        fig_names.append(out_html_name)
+        fig_names[f"{label} {i+1}"] = out_html_name
 
     # Delay
     table_dict, meta_dict = read_delay_data_tables(folder)
 
     figs = delay_freq_figures(table_dict, meta_dict,
                               nant_per_figure=8,)
+    label = 'Delay'
 
     for i, fig in enumerate(figs):
 
         out_html_name = f"delay_plotly_interactive_{i}.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
 
-        fig_names.append(out_html_name)
+        fig_names[f"{label} {i+1}"] = out_html_name
 
     # BP init phase
     table_dict, meta_dict = read_BPinitialgain_data_tables(folder)
+    label = 'BP Initial Gain'
 
     figs = phase_gain_figures(table_dict, meta_dict,
                               nant_per_figure=8,)
@@ -154,10 +159,11 @@ def make_all_cal_plots(track_folder, folder, output_folder,
         out_html_name = f"BPinit_phase_plotly_interactive_{i}.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
 
-        fig_names.append(out_html_name)
+        fig_names[f"{label} {i+1}"] = out_html_name
 
     # phase short gain cal
     table_dict, meta_dict = read_phaseshortgaincal_data_tables(folder)
+    label = 'Phase (short) gain'
 
     figs = phase_gain_figures(table_dict, meta_dict,
                               nant_per_figure=8,)
@@ -167,10 +173,11 @@ def make_all_cal_plots(track_folder, folder, output_folder,
         out_html_name = f"phaseshortgaincal_plotly_interactive_{i}.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
 
-        fig_names.append(out_html_name)
+        fig_names[f"{label} {i+1}"] = out_html_name
 
     # Amp gain cal time
     table_dict, meta_dict = read_ampgaincal_time_data_tables(folder)
+    label = 'Amp Gain Time'
 
     figs = amp_gain_time_figures(table_dict, meta_dict,
                                  nant_per_figure=8,)
@@ -180,23 +187,25 @@ def make_all_cal_plots(track_folder, folder, output_folder,
         out_html_name = f"ampgain_time_plotly_interactive_{i}.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
 
-        fig_names.append(out_html_name)
+        fig_names[f"{label} {i+1}"] = out_html_name
 
     # Amp gain cal freq
     table_dict, meta_dict = read_ampgaincal_freq_data_tables(folder)
 
     figs = amp_gain_freq_figures(table_dict, meta_dict,
                                  nant_per_figure=8,)
+    label = 'Amp Gain Freq'
 
     for i, fig in enumerate(figs):
 
         out_html_name = f"ampgain_freq_plotly_interactive_{i}.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
 
-        fig_names.append(out_html_name)
+        fig_names[f"{label} {i+1}"] = out_html_name
 
     # Phase gain cal
     table_dict, meta_dict = read_phasegaincal_data_tables(folder)
+    label = 'Phase Gain Time'
 
     figs = phase_gain_figures(table_dict, meta_dict,
                               nant_per_figure=8,)
@@ -206,9 +215,9 @@ def make_all_cal_plots(track_folder, folder, output_folder,
         out_html_name = f"phasegain_time_plotly_interactive_{i}.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
 
-        fig_names.append(out_html_name)
+        fig_names[f"{label} {i+1}"] = out_html_name
 
-    make_bandpass_all_html_links(track_folder, output_folder, fig_names, meta_dict_0,
+    make_caltable_all_html_links(track_folder, output_folder, fig_names, meta_dict_0,
                                  flagging_sheet_link=flagging_sheet_link)
 
 
@@ -264,9 +273,6 @@ def make_all_plots(msname=None,
                      save_fieldnames=save_fieldnames,
                      flagging_sheet_link=flagging_sheet_link,
                      corrs=corrs)
-
-    # make_BP_plots(track_folder, folder_BPs, output_folder_BPs,
-    #               flagging_sheet_link=flagging_sheet_link)
 
     make_all_cal_plots(track_folder, folder_cals, output_folder_cals,
                        flagging_sheet_link=flagging_sheet_link)
