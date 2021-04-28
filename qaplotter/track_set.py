@@ -2,9 +2,21 @@
 from glob import glob
 import os
 
-from .utils import read_field_data_tables, read_bpcal_data_tables
+from .utils import (read_field_data_tables,
+                    read_bpcal_data_tables,
+                    read_delay_data_tables,
+                    read_BPinitialgain_data_tables,
+                    read_phaseshortgaincal_data_tables,
+                    read_ampgaincal_time_data_tables,
+                    read_ampgaincal_freq_data_tables,
+                    read_phasegaincal_data_tables)
+
 from .field_plots import target_scan_figure, calibrator_scan_figure
 from .bp_plots import bp_amp_phase_figures
+
+from .amp_phase_cal_plots import (phase_gain_figures, amp_gain_time_figures,
+                                  delay_freq_figures, amp_gain_freq_figures)
+
 from .html_linking import make_all_html_links, make_bandpass_all_html_links, make_html_homepage
 
 
@@ -66,8 +78,37 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
                         flagging_sheet_link=flagging_sheet_link)
 
 
-def make_BP_plots(track_folder, folder, output_folder,
-                  flagging_sheet_link=None):
+# def make_BP_plots(track_folder, folder, output_folder,
+#                   flagging_sheet_link=None):
+
+#     table_dict, meta_dict = read_bpcal_data_tables(folder)
+
+#     meta_dict_0 = meta_dict['amp'][list(meta_dict['amp'].keys())[0]]
+
+#     figs = bp_amp_phase_figures(table_dict, meta_dict,
+#                                 nspw_per_figure=4)
+
+#     # Make output folder if it doesn't exist
+#     if not os.path.exists(output_folder):
+#         os.mkdir(output_folder)
+
+#     fig_names = []
+
+#     for i, fig in enumerate(figs):
+
+#         out_html_name = f"BP_amp_phase_plotly_interactive_{i}.html"
+#         fig.write_html(f"{output_folder}/{out_html_name}")
+
+#         fig_names.append(out_html_name)
+
+#     make_bandpass_all_html_links(track_folder, output_folder, fig_names, meta_dict_0,
+#                                  flagging_sheet_link=flagging_sheet_link)
+
+
+def make_all_cal_plots(track_folder, folder, output_folder,
+                       flagging_sheet_link=None):
+
+    # Bandpass plots
 
     table_dict, meta_dict = read_bpcal_data_tables(folder)
 
@@ -89,6 +130,84 @@ def make_BP_plots(track_folder, folder, output_folder,
 
         fig_names.append(out_html_name)
 
+    # Delay
+    table_dict, meta_dict = read_delay_data_tables(folder)
+
+    figs = delay_freq_figures(table_dict, meta_dict,
+                              nant_per_figure=8,)
+
+    for i, fig in enumerate(figs):
+
+        out_html_name = f"delay_plotly_interactive_{i}.html"
+        fig.write_html(f"{output_folder}/{out_html_name}")
+
+        fig_names.append(out_html_name)
+
+    # BP init phase
+    table_dict, meta_dict = read_BPinitialgain_data_tables(folder)
+
+    figs = phase_gain_figures(table_dict, meta_dict,
+                              nant_per_figure=8,)
+
+    for i, fig in enumerate(figs):
+
+        out_html_name = f"BPinit_phase_plotly_interactive_{i}.html"
+        fig.write_html(f"{output_folder}/{out_html_name}")
+
+        fig_names.append(out_html_name)
+
+    # phase short gain cal
+    table_dict, meta_dict = read_phaseshortgaincal_data_tables(folder)
+
+    figs = phase_gain_figures(table_dict, meta_dict,
+                              nant_per_figure=8,)
+
+    for i, fig in enumerate(figs):
+
+        out_html_name = f"phaseshortgaincal_plotly_interactive_{i}.html"
+        fig.write_html(f"{output_folder}/{out_html_name}")
+
+        fig_names.append(out_html_name)
+
+    # Amp gain cal time
+    table_dict, meta_dict = read_ampgaincal_time_data_tables(folder)
+
+    figs = amp_gain_time_figures(table_dict, meta_dict,
+                                 nant_per_figure=8,)
+
+    for i, fig in enumerate(figs):
+
+        out_html_name = f"ampgain_time_plotly_interactive_{i}.html"
+        fig.write_html(f"{output_folder}/{out_html_name}")
+
+        fig_names.append(out_html_name)
+
+    # Amp gain cal freq
+    table_dict, meta_dict = read_ampgaincal_freq_data_tables(folder)
+
+    figs = amp_gain_freq_figures(table_dict, meta_dict,
+                                 nant_per_figure=8,)
+
+    for i, fig in enumerate(figs):
+
+        out_html_name = f"ampgain_freq_plotly_interactive_{i}.html"
+        fig.write_html(f"{output_folder}/{out_html_name}")
+
+        fig_names.append(out_html_name)
+
+    # Phase gain cal
+    table_dict, meta_dict = read_phasegaincal_data_tables(folder)
+
+    figs = phase_gain_figures(table_dict, meta_dict,
+                              nant_per_figure=8,)
+
+    for i, fig in enumerate(figs):
+
+        out_html_name = f"phasegain_time_plotly_interactive_{i}.html"
+        fig.write_html(f"{output_folder}/{out_html_name}")
+
+        fig_names.append(out_html_name)
+
     make_bandpass_all_html_links(track_folder, output_folder, fig_names, meta_dict_0,
                                  flagging_sheet_link=flagging_sheet_link)
 
@@ -96,8 +215,10 @@ def make_BP_plots(track_folder, folder, output_folder,
 def make_all_plots(msname=None,
                    folder_fields="scan_plots_txt",
                    output_folder_fields="scan_plots_QAplots",
-                   folder_BPs="finalBPcal_txt",
-                   output_folder_BPs="finalBPcal_QAplots",
+                #    folder_BPs="final_caltable_txt",
+                #    output_folder_BPs="final_caltable_QAplots",
+                   folder_cals="final_caltable_txt",
+                   output_folder_cals="final_caltable_QAplots",
                    save_fieldnames=True,
                    flagging_sheet_link=None,
                    corrs=['RR', 'LL']):
@@ -144,5 +265,8 @@ def make_all_plots(msname=None,
                      flagging_sheet_link=flagging_sheet_link,
                      corrs=corrs)
 
-    make_BP_plots(track_folder, folder_BPs, output_folder_BPs,
-                  flagging_sheet_link=flagging_sheet_link)
+    # make_BP_plots(track_folder, folder_BPs, output_folder_BPs,
+    #               flagging_sheet_link=flagging_sheet_link)
+
+    make_all_cal_plots(track_folder, folder_cals, output_folder_cals,
+                       flagging_sheet_link=flagging_sheet_link)
