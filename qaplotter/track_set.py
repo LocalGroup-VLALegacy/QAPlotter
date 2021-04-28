@@ -12,14 +12,12 @@ from .utils import (read_field_data_tables,
                     read_phasegaincal_data_tables)
 
 from .field_plots import target_scan_figure, calibrator_scan_figure
-from .bp_plots import bp_amp_phase_figures
 
 from .amp_phase_cal_plots import (phase_gain_figures, amp_gain_time_figures,
                                   delay_freq_figures, amp_gain_freq_figures)
 
 from .html_linking import (make_all_html_links, make_html_homepage,
                            make_caltable_all_html_links)
-                        #  make_bandpass_all_html_links)
 
 
 def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
@@ -78,33 +76,6 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
     # Make the linking files into the same folder.
     make_all_html_links(track_folder, output_folder, fieldnames, meta_dict_0,
                         flagging_sheet_link=flagging_sheet_link)
-
-
-# def make_BP_plots(track_folder, folder, output_folder,
-#                   flagging_sheet_link=None):
-
-#     table_dict, meta_dict = read_bpcal_data_tables(folder)
-
-#     meta_dict_0 = meta_dict['amp'][list(meta_dict['amp'].keys())[0]]
-
-#     figs = bp_amp_phase_figures(table_dict, meta_dict,
-#                                 nspw_per_figure=4)
-
-#     # Make output folder if it doesn't exist
-#     if not os.path.exists(output_folder):
-#         os.mkdir(output_folder)
-
-#     fig_names = []
-
-#     for i, fig in enumerate(figs):
-
-#         out_html_name = f"BP_amp_phase_plotly_interactive_{i}.html"
-#         fig.write_html(f"{output_folder}/{out_html_name}")
-
-#         fig_names.append(out_html_name)
-
-#     make_bandpass_all_html_links(track_folder, output_folder, fig_names, meta_dict_0,
-#                                  flagging_sheet_link=flagging_sheet_link)
 
 
 def make_all_cal_plots(track_folder, folder, output_folder,
