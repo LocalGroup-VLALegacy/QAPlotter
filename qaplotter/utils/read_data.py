@@ -121,6 +121,11 @@ def read_bpcal_data_tables(inp_path):
     amp_tab_names = glob(f"{inp_path}/*finalBPcal_freq_amp*.txt")
     phase_tab_names = glob(f"{inp_path}/*finalBPcal_freq_phase*.txt")
 
+    # If either of these return 0, try the old naming scheme:
+    if len(amp_tab_names) == 0 or len(phase_tab_names) == 0:
+        amp_tab_names = glob(f"{inp_path}/*finalBPcal_amp*.txt")
+        phase_tab_names = glob(f"{inp_path}/*finalBPcal_phase*.txt")
+
     if len(amp_tab_names) != len(phase_tab_names):
         raise ValueError("Number of BP amp tables does not match BP phase tables.: "
                          f"Num amp tables: {len(amp_tab_names)}. Num phase tables: {len(phase_tab_names)}")

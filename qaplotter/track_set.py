@@ -78,124 +78,155 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
     make_all_html_links(flagging_sheet_link, output_folder, fieldnames, meta_dict_0)
 
 
-def make_all_cal_plots(track_folder, folder, output_folder,
-                       flagging_sheet_link=None):
+def make_all_cal_plots(flagging_sheet_link, folder, output_folder):
+
+    fig_names = {}
 
     # Bandpass plots
 
     table_dict, meta_dict = read_bpcal_data_tables(folder)
 
-    meta_dict_0 = meta_dict['amp'][list(meta_dict['amp'].keys())[0]]
+    # Check if files exist. If not, skip.
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
 
-    figs = bp_amp_phase_figures(table_dict, meta_dict,
-                                nspw_per_figure=4)
+        meta_dict_0 = meta_dict['amp'][list(meta_dict['amp'].keys())[0]]
 
-    # Make output folder if it doesn't exist
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+        figs = bp_amp_phase_figures(table_dict, meta_dict,
+                                    nspw_per_figure=4)
 
-    fig_names = {}
-    label = 'Bandpass'
+        # Make output folder if it doesn't exist
+        if not os.path.exists(output_folder):
+            os.mkdir(output_folder)
 
-    for i, fig in enumerate(figs):
+        label = 'Bandpass'
 
-        out_html_name = f"BP_amp_phase_plotly_interactive_{i}.html"
-        fig.write_html(f"{output_folder}/{out_html_name}")
+        for i, fig in enumerate(figs):
 
-        fig_names[f"{label} {i+1}"] = out_html_name
+            out_html_name = f"BP_amp_phase_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
 
     # Delay
     table_dict, meta_dict = read_delay_data_tables(folder)
 
-    figs = delay_freq_figures(table_dict, meta_dict,
-                              nant_per_figure=8,)
-    label = 'Delay'
+    # Check if files exist. If not, skip.
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
 
-    for i, fig in enumerate(figs):
+        figs = delay_freq_figures(table_dict, meta_dict,
+                                nant_per_figure=8,)
+        label = 'Delay'
 
-        out_html_name = f"delay_plotly_interactive_{i}.html"
-        fig.write_html(f"{output_folder}/{out_html_name}")
+        for i, fig in enumerate(figs):
 
-        fig_names[f"{label} {i+1}"] = out_html_name
+            out_html_name = f"delay_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
 
     # BP init phase
     table_dict, meta_dict = read_BPinitialgain_data_tables(folder)
-    label = 'BP Initial Gain'
 
-    figs = phase_gain_figures(table_dict, meta_dict,
-                              nant_per_figure=8,)
+    # Check if files exist. If not, skip.
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
 
-    for i, fig in enumerate(figs):
+        figs = phase_gain_figures(table_dict, meta_dict,
+                                nant_per_figure=8,)
 
-        out_html_name = f"BPinit_phase_plotly_interactive_{i}.html"
-        fig.write_html(f"{output_folder}/{out_html_name}")
+        label = 'BP Initial Gain'
 
-        fig_names[f"{label} {i+1}"] = out_html_name
+        for i, fig in enumerate(figs):
+
+            out_html_name = f"BPinit_phase_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
 
     # phase short gain cal
+
+    # Check if files exist. If not, skip.
     table_dict, meta_dict = read_phaseshortgaincal_data_tables(folder)
-    label = 'Phase (short) gain'
 
-    figs = phase_gain_figures(table_dict, meta_dict,
-                              nant_per_figure=8,)
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
 
-    for i, fig in enumerate(figs):
+        label = 'Phase (short) gain'
 
-        out_html_name = f"phaseshortgaincal_plotly_interactive_{i}.html"
-        fig.write_html(f"{output_folder}/{out_html_name}")
+        figs = phase_gain_figures(table_dict, meta_dict,
+                                nant_per_figure=8,)
 
-        fig_names[f"{label} {i+1}"] = out_html_name
+        for i, fig in enumerate(figs):
+
+            out_html_name = f"phaseshortgaincal_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
 
     # Amp gain cal time
     table_dict, meta_dict = read_ampgaincal_time_data_tables(folder)
-    label = 'Amp Gain Time'
 
-    figs = amp_gain_time_figures(table_dict, meta_dict,
-                                 nant_per_figure=8,)
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
 
-    for i, fig in enumerate(figs):
+        label = 'Amp Gain Time'
 
-        out_html_name = f"ampgain_time_plotly_interactive_{i}.html"
-        fig.write_html(f"{output_folder}/{out_html_name}")
+        figs = amp_gain_time_figures(table_dict, meta_dict,
+                                    nant_per_figure=8,)
 
-        fig_names[f"{label} {i+1}"] = out_html_name
+        for i, fig in enumerate(figs):
+
+            out_html_name = f"ampgain_time_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
 
     # Amp gain cal freq
     table_dict, meta_dict = read_ampgaincal_freq_data_tables(folder)
 
-    figs = amp_gain_freq_figures(table_dict, meta_dict,
-                                 nant_per_figure=8,)
-    label = 'Amp Gain Freq'
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
 
-    for i, fig in enumerate(figs):
+        figs = amp_gain_freq_figures(table_dict, meta_dict,
+                                    nant_per_figure=8,)
+        label = 'Amp Gain Freq'
 
-        out_html_name = f"ampgain_freq_plotly_interactive_{i}.html"
-        fig.write_html(f"{output_folder}/{out_html_name}")
+        for i, fig in enumerate(figs):
 
-        fig_names[f"{label} {i+1}"] = out_html_name
+            out_html_name = f"ampgain_freq_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
 
     # Phase gain cal
     table_dict, meta_dict = read_phasegaincal_data_tables(folder)
-    label = 'Phase Gain Time'
 
-    figs = phase_gain_figures(table_dict, meta_dict,
-                              nant_per_figure=8,)
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
 
-    for i, fig in enumerate(figs):
+        label = 'Phase Gain Time'
 
-        out_html_name = f"phasegain_time_plotly_interactive_{i}.html"
-        fig.write_html(f"{output_folder}/{out_html_name}")
+        figs = phase_gain_figures(table_dict, meta_dict,
+                                nant_per_figure=8,)
 
-        fig_names[f"{label} {i+1}"] = out_html_name
+        for i, fig in enumerate(figs):
 
-    make_caltable_all_html_links(flagging_sheet_link, output_folder, fig_names, meta_dict_0)
+            out_html_name = f"phasegain_time_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
+
+    if len(fig_names) > 0:
+
+        make_caltable_all_html_links(flagging_sheet_link, output_folder, fig_names, meta_dict_0)
 
 
 def make_all_plots(msname=None,
                    folder_fields="scan_plots_txt",
                    output_folder_fields="scan_plots_QAplots",
-                #    folder_BPs="final_caltable_txt",
-                #    output_folder_BPs="final_caltable_QAplots",
+                   folder_BPs="finalBPcal_txt",
                    folder_cals="final_caltable_txt",
                    output_folder_cals="final_caltable_QAplots",
                    save_fieldnames=True,
@@ -242,5 +273,14 @@ def make_all_plots(msname=None,
     make_field_plots(flagging_sheet_link, folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames,
                      corrs=corrs)
+
+    # For older pipeline runs, only the BP txt files will be available.
+    if not os.path.exists(folder_cals):
+
+        if os.path.exists(folder_BPs):
+            folder_cals = folder_BPs
+        else:
+            print("No cal plot txt files were found. Skipping.")
+            return
 
     make_all_cal_plots(flagging_sheet_link, folder_cals, output_folder_cals)
