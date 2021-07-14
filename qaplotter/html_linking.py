@@ -114,7 +114,7 @@ def make_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
           file=open(index_file, 'a'))
 
 
-def make_all_html_links(flagging_sheet_link, folder, field_list, ms_info_dict):
+def make_all_html_links(flagging_sheet_link, folder, field_dict, ms_info_dict):
     '''
     Make and save all html files for linking the interactive plots
     together.
@@ -136,24 +136,28 @@ def make_all_html_links(flagging_sheet_link, folder, field_list, ms_info_dict):
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_html_page(flagging_sheet_link, field_list, ms_info_dict),
+    print(make_index_html_page(flagging_sheet_link,
+                               field_dict,
+                               ms_info_dict),
           file=open(index_file, 'a'))
 
     # Loop through the fields
-    for i, field in enumerate(field_list):
+    for i, field in enumerate(field_dict):
 
         field_file = mypath / f"linker_{field}.html"
 
         if field_file.exists():
             field_file.unlink()
 
-        print(make_plot_html_page(flagging_sheet_link, field_list, active_idx=i),
+        print(make_plot_html_page(flagging_sheet_link, field_dict, active_idx=i),
               file=open(field_file, 'a'))
 
 
-def make_index_html_page(flagging_sheet_link, field_list, ms_info_dict):
+def make_index_html_page(flagging_sheet_link, field_dict, ms_info_dict):
 
     html_string = make_html_preamble()
+
+    field_list = list(field_dict.keys())
 
     # Add navigation bar with link to other QA products
     active_idx = 0
@@ -161,7 +165,7 @@ def make_index_html_page(flagging_sheet_link, field_list, ms_info_dict):
                                              next_field=field_list[min(active_idx + 1, len(field_list))],
                                              current_field=field_list[active_idx])
 
-    html_string += make_sidebar(field_list, active_idx=None)
+    html_string += make_sidebar(field_dict, active_idx=None)
 
     # Add in MS info:
     html_string += '<div class="content" id="basic">\n'
@@ -181,9 +185,11 @@ def make_index_html_page(flagging_sheet_link, field_list, ms_info_dict):
     return html_string
 
 
-def make_plot_html_page(flagging_sheet_link, field_list, active_idx=0):
+def make_plot_html_page(flagging_sheet_link, field_dict, active_idx=0):
 
     html_string = make_html_preamble()
+
+    field_list = list(field_dict.keys())
 
     prev_field = field_list[active_idx - 1] if active_idx != 0 else None
     next_field = field_list[active_idx + 1] if active_idx < len(field_list) - 1 else None
@@ -191,7 +197,7 @@ def make_plot_html_page(flagging_sheet_link, field_list, active_idx=0):
     html_string += make_next_previous_navbar(flagging_sheet_link, prev_field, next_field,
                                              current_field=field_list[active_idx])
 
-    html_string += make_sidebar(field_list, active_idx=active_idx)
+    html_string += make_sidebar(field_dict, active_idx=active_idx)
 
     html_string += make_content_div(field_list[active_idx])
 
@@ -356,7 +362,7 @@ def make_next_previous_navbar(flagging_sheet_link, prev_field=None, next_field=N
     return navbar_string
 
 
-def make_sidebar(field_list, active_idx=0):
+def make_sidebar(field_dict, active_idx=0):
     '''
     Persistent side bar with all field names. For quick switching.
     '''
@@ -368,7 +374,7 @@ def make_sidebar(field_list, active_idx=0):
     else:
         sidebar_string += '    <a class="" href="index.html">Home</a>\n'
 
-    for i, field in enumerate(field_list):
+    for i, field in enumerate(field_dict):
 
         # Set as active
         if i == active_idx:
@@ -376,7 +382,7 @@ def make_sidebar(field_list, active_idx=0):
         else:
             class_is = ""
 
-        sidebar_string += f'    <a class="{class_is}" href="linker_{field}.html">{i+1}. {field}</a>\n'
+        sidebar_string += f'    <a class="{class_is}" href="linker_{field}.html">{i+1}. {field} <br><small>{field_dict[field]}</small> </a>\n'
 
     sidebar_string += '</div>\n\n'
 

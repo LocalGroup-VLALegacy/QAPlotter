@@ -57,6 +57,8 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
 
     meta_dict_0 = read_field_data_tables(fieldnames[0], folder)[1]['amp_time']
 
+    field_intents = {}
+
     for i, field in enumerate(fieldnames):
 
         table_dict, meta_dict = read_field_data_tables(field, folder)
@@ -67,6 +69,8 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
             field_intent = ''
 
         meta_dict['intent'] = field_intent
+
+        field_intents[field] = field_intent
 
         # Target
         if len(table_dict.keys()) == 3:
@@ -84,7 +88,7 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
         fig.write_html(f"{output_folder}/{out_html_name}")
 
     # Make the linking files into the same folder.
-    make_all_html_links(flagging_sheet_link, output_folder, fieldnames, meta_dict_0)
+    make_all_html_links(flagging_sheet_link, output_folder, field_intents, meta_dict_0)
 
 
 def make_all_cal_plots(flagging_sheet_link, folder, output_folder):
