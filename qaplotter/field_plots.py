@@ -172,7 +172,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     meta = meta_dict['amp_time']
 
     fig.update_layout(
-        title=f"Field: {meta['field']}<br>MS: {meta['vis']}",
+        title=f"Field: {meta['field']}  Intent: {meta_dict['intent']}<br>MS: {meta['vis']}",
         font=dict(family="Courier New, monospace",
                   size=15,
                   color="#7f7f7f")
@@ -404,7 +404,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     meta = meta_dict['amp_time']
 
     fig.update_layout(
-        title=f"Field: {meta['field']}<br>MS: {meta['vis']}",
+        title=f"Field: {meta['field']}  Intent: {meta_dict['intent']}<br>MS: {meta['vis']}",
         font=dict(
             family="Courier New, monospace",
             size=15,

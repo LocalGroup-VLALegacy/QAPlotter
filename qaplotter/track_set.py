@@ -11,6 +11,8 @@ from .utils import (read_field_data_tables,
                     read_ampgaincal_freq_data_tables,
                     read_phasegaincal_data_tables)
 
+from .parse_weblog import get_field_intents
+
 from .field_plots import target_scan_figure, calibrator_scan_figure
 from .bp_plots import bp_amp_phase_figures
 
@@ -58,6 +60,13 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
     for i, field in enumerate(fieldnames):
 
         table_dict, meta_dict = read_field_data_tables(field, folder)
+
+        try:
+            field_intent = get_field_intents(field, meta_dict['amp_chan']['vis'])
+        except Exception as e:
+            field_intent = ''
+
+        meta_dict['intent'] = field_intent
 
         # Target
         if len(table_dict.keys()) == 3:
