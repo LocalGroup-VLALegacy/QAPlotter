@@ -2,6 +2,7 @@
 from astropy.table import Table
 import os
 from glob import glob
+import numpy as np
 
 osjoin = os.path.join
 
@@ -379,3 +380,43 @@ def read_phasegaincal_data_tables(inp_path):
         meta_dict['phase'][ant] = phase_out[1]
 
     return table_dict, meta_dict
+
+
+def read_flagfrac_freq_data_tables(inp_path):
+
+    table_dict = dict()
+
+    template_name = '_flagfrac_freq.txt'
+
+    flagfrac_tab_names = glob(f"{inp_path}/*{template_name}")
+
+    for tab_filename in flagfrac_tab_names:
+
+        field_name = os.path.basename(tab_filename).split(template_name)[0].split('field_')[1]
+
+        data = np.loadtxt(tab_filename)
+
+        colnames = ['spw', 'channel', 'freq', 'frac']
+
+        table_dict[field_name] = Table(data, names=colnames)
+
+    return table_dict
+
+
+def read_flagfrac_uvdist_data_tables(inp_path):
+
+    table_dict = dict()
+
+    template_name = '_flagfrac_uvdist.txt'
+
+    flagfrac_tab_names = glob(f"{inp_path}/*{template_name}")
+
+    for tab_filename in flagfrac_tab_names:
+
+        field_name = os.path.basename(tab_filename).split(template_name)[0].split('field_')[1]
+
+        colnames = ['field', 'spw', 'uvdist', 'frac']
+
+        table_dict[field_name] = Table.read(tab_filename, names=colnames, format='ascii')
+
+    return table_dict
