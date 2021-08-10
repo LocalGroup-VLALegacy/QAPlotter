@@ -77,12 +77,12 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
 
             fig = target_scan_figure(table_dict, meta_dict, show=False, corrs=corrs)
 
-        elif len(table_dict.keys()) == 8:
+        elif len(table_dict.keys()) == 10:
 
             fig = calibrator_scan_figure(table_dict, meta_dict, show=False, corrs=corrs)
 
         else:
-            raise ValueError(f"Found {len(table_dict.keys())} tables for {field} instead of 3 or 7.")
+            raise ValueError(f"Found {len(table_dict.keys())} tables for {field} instead of 3 or 10.")
 
         out_html_name = f"{field}_plotly_interactive.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
