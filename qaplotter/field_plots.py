@@ -223,7 +223,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Scattergl,
                            corrs=['RR', 'LL']):
     '''
-    Make a 7-panel figure for target scans.
+    Make a 12-panel (4x3) figure for calibrator scans.
     '''
 
     # There should be 8 fields:
@@ -242,7 +242,11 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                 'phase_uvdist': {'x': 'x', 'y': 'y', 'row': 2, 'col': 3,
                                  "title": "Phase vs. uv-dist<br>Time & Freq avg"},
                 'ampresid_uvwave': {'x': 'x', 'y': 'y', 'row': 2, 'col': 4,
-                                    "title": "Resid Amp vs. uv-wave<br>Time & Freq avg"}}
+                                    "title": "Resid Amp vs. uv-wave<br>Time & Freq avg"},
+                'amp_ant1': {'x': 'x', 'y': 'y', 'row': 3, 'col': 1,
+                             "title": "Amp vs. Ant 1.<br>Time & Freq avg"},
+                'phase_ant1': {'x': 'x', 'y': 'y', 'row': 3, 'col': 2,
+                               "title": "Phase vs. Ant 1.<br>Time & Freq avg"}}
 
     for key in exp_keys:
         if key not in table_dict.keys():
@@ -256,9 +260,11 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                       exp_keys['phase_chan']['title'],
                       exp_keys['phase_time']['title'],
                       exp_keys['phase_uvdist']['title'],
-                      exp_keys['ampresid_uvwave']['title']]
+                      exp_keys['ampresid_uvwave']['title'],
+                      exp_keys['amp_ant1']['title'],
+                      exp_keys['phase_ant1']['title']]
 
-    fig = make_subplots(rows=2, cols=4, subplot_titles=subplot_titles)
+    fig = make_subplots(rows=3, cols=4, subplot_titles=subplot_titles)
 
     hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
@@ -390,6 +396,8 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     fig['layout']['xaxis6']['title'] = 'Time (UTC)'
     fig['layout']['xaxis7']['title'] = 'uv-distance (m)'
     fig['layout']['xaxis8']['title'] = 'uv-wave'
+    fig['layout']['xaxis9']['title'] = 'Antenna 1'
+    fig['layout']['xaxis10']['title'] = 'Antenna 1'
 
     # Check these: is it actually Jy or Jy/deg, etc?
     fig['layout']['yaxis']['title'] = 'Amplitude (Jy)'
@@ -400,11 +408,18 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     fig['layout']['yaxis6']['title'] = 'Phase (deg)'
     fig['layout']['yaxis7']['title'] = 'Phase (deg)'
     fig['layout']['yaxis8']['title'] = '(Amplitude - Model) Residual (Jy)'
+    fig['layout']['yaxis9']['title'] = 'Amplitude (Jy)'
+    fig['layout']['yaxis10']['title'] = 'Phase (deg)'
 
     meta = meta_dict['amp_time']
 
+    if 'intent' not in meta_dict:
+        intent_str = "NONE"
+    else:
+        intent_str = meta_dict['intent']
+
     fig.update_layout(
-        title=f"Field: {meta['field']}  Intent: {meta_dict['intent']}<br>MS: {meta['vis']}",
+        title=f"Field: {meta['field']}  Intent: {intent_str}<br>MS: {meta['vis']}",
         font=dict(
             family="Courier New, monospace",
             size=15,
