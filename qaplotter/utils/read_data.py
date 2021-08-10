@@ -89,7 +89,8 @@ def read_field_data_tables(fieldname, inp_path):
 
     # Table types:
     tab_types = ["amp_chan", "amp_phase", "amp_time", "amp_uvdist", "phase_chan",
-                 "phase_time", "phase_uvdist", "ampresid_uvwave"]
+                 "phase_time", "phase_uvdist", "ampresid_uvwave", "amp_ant1",
+                 "phase_ant1"]
     # Target fields will not have the phase tables.
     # Cal fields should have all
 
