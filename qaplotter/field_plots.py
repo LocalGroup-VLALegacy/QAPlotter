@@ -250,9 +250,9 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
     # Make the antenna plots optional because they were added later.
     if not 'amp_ant1' in table_dict.keys():
-        exp_keys['amp_ant1'].pop()
+        del exp_keys['amp_ant1']
     if not 'phase_ant1' in table_dict.keys():
-        exp_keys['phase_ant1'].pop()
+        del exp_keys['phase_ant1']
 
     for key in exp_keys:
         if key not in table_dict.keys():
@@ -266,9 +266,12 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                       exp_keys['phase_chan']['title'],
                       exp_keys['phase_time']['title'],
                       exp_keys['phase_uvdist']['title'],
-                      exp_keys['ampresid_uvwave']['title'],
-                      exp_keys['amp_ant1']['title'],
-                      exp_keys['phase_ant1']['title']]
+                      exp_keys['ampresid_uvwave']['title']]
+
+    if 'amp_ant1' in table_dict.keys():
+        subplot_titles.append(exp_keys['amp_ant1']['title'])
+    if 'phase_ant1' in table_dict.keys():
+        subplot_titles.append(exp_keys['phase_ant1']['title'])
 
     fig = make_subplots(rows=3, cols=4, subplot_titles=subplot_titles)
 
