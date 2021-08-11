@@ -77,7 +77,7 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
 
             fig = target_scan_figure(table_dict, meta_dict, show=False, corrs=corrs)
 
-        elif len(table_dict.keys()) == 10:
+        elif len(table_dict.keys()) == 10 or len(table_dict.keys()) == 8:
 
             fig = calibrator_scan_figure(table_dict, meta_dict, show=False, corrs=corrs)
 

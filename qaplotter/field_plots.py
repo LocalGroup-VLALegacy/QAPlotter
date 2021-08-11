@@ -226,7 +226,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     Make a 12-panel (4x3) figure for calibrator scans.
     '''
 
-    # There should be 8 fields:
+    # There should be 10 fields:
     exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1,
                              "title": "Amp vs. Freq<br>Time & Baseline avg"},
                 'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2,
@@ -247,6 +247,12 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                              "title": "Amp vs. Ant 1.<br>Time & Freq avg"},
                 'phase_ant1': {'x': 'x', 'y': 'y', 'row': 3, 'col': 2,
                                "title": "Phase vs. Ant 1.<br>Time & Freq avg"}}
+
+    # Make the antenna plots optional because they were added later.
+    if not 'amp_ant1' in table_dict.keys():
+        exp_keys['amp_ant1'].pop()
+    if not 'phase_ant1' in table_dict.keys():
+        exp_keys['phase_ant1'].pop()
 
     for key in exp_keys:
         if key not in table_dict.keys():
