@@ -121,59 +121,20 @@ def make_all_cal_plots(flagging_sheet_link, folder, output_folder):
 
             fig_names[f"{label} {i+1}"] = out_html_name
 
-    # Delay
-    table_dict, meta_dict = read_delay_data_tables(folder)
-
-    # Check if files exist. If not, skip.
-    key0 = list(table_dict.keys())[0]
-    if len(table_dict[key0]) > 0:
-
-        figs = delay_freq_figures(table_dict, meta_dict,
-                                nant_per_figure=8,)
-        label = 'Delay'
-
-        for i, fig in enumerate(figs):
-
-            out_html_name = f"delay_plotly_interactive_{i}.html"
-            fig.write_html(f"{output_folder}/{out_html_name}")
-
-            fig_names[f"{label} {i+1}"] = out_html_name
-
-    # BP init phase
-    table_dict, meta_dict = read_BPinitialgain_data_tables(folder)
-
-    # Check if files exist. If not, skip.
-    key0 = list(table_dict.keys())[0]
-    if len(table_dict[key0]) > 0:
-
-        figs = phase_gain_figures(table_dict, meta_dict,
-                                nant_per_figure=8,)
-
-        label = 'BP Initial Gain'
-
-        for i, fig in enumerate(figs):
-
-            out_html_name = f"BPinit_phase_plotly_interactive_{i}.html"
-            fig.write_html(f"{output_folder}/{out_html_name}")
-
-            fig_names[f"{label} {i+1}"] = out_html_name
-
-    # phase short gain cal
-
-    # Check if files exist. If not, skip.
-    table_dict, meta_dict = read_phaseshortgaincal_data_tables(folder)
+    # Phase gain cal
+    table_dict, meta_dict = read_phasegaincal_data_tables(folder)
 
     key0 = list(table_dict.keys())[0]
     if len(table_dict[key0]) > 0:
 
-        label = 'Phase (short) gain'
+        label = 'Phase Gain Time'
 
         figs = phase_gain_figures(table_dict, meta_dict,
                                 nant_per_figure=8,)
 
         for i, fig in enumerate(figs):
 
-            out_html_name = f"phaseshortgaincal_plotly_interactive_{i}.html"
+            out_html_name = f"phasegain_time_plotly_interactive_{i}.html"
             fig.write_html(f"{output_folder}/{out_html_name}")
 
             fig_names[f"{label} {i+1}"] = out_html_name
@@ -213,20 +174,59 @@ def make_all_cal_plots(flagging_sheet_link, folder, output_folder):
 
             fig_names[f"{label} {i+1}"] = out_html_name
 
-    # Phase gain cal
-    table_dict, meta_dict = read_phasegaincal_data_tables(folder)
+    # Delay
+    table_dict, meta_dict = read_delay_data_tables(folder)
+
+    # Check if files exist. If not, skip.
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
+
+        figs = delay_freq_figures(table_dict, meta_dict,
+                                nant_per_figure=8,)
+        label = 'Delay'
+
+        for i, fig in enumerate(figs):
+
+            out_html_name = f"delay_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
+
+    # phase short gain cal
+
+    # Check if files exist. If not, skip.
+    table_dict, meta_dict = read_phaseshortgaincal_data_tables(folder)
 
     key0 = list(table_dict.keys())[0]
     if len(table_dict[key0]) > 0:
 
-        label = 'Phase Gain Time'
+        label = 'Phase (short) gain'
 
         figs = phase_gain_figures(table_dict, meta_dict,
                                 nant_per_figure=8,)
 
         for i, fig in enumerate(figs):
 
-            out_html_name = f"phasegain_time_plotly_interactive_{i}.html"
+            out_html_name = f"phaseshortgaincal_plotly_interactive_{i}.html"
+            fig.write_html(f"{output_folder}/{out_html_name}")
+
+            fig_names[f"{label} {i+1}"] = out_html_name
+
+    # BP init phase
+    table_dict, meta_dict = read_BPinitialgain_data_tables(folder)
+
+    # Check if files exist. If not, skip.
+    key0 = list(table_dict.keys())[0]
+    if len(table_dict[key0]) > 0:
+
+        figs = phase_gain_figures(table_dict, meta_dict,
+                                nant_per_figure=8,)
+
+        label = 'BP Initial Gain'
+
+        for i, fig in enumerate(figs):
+
+            out_html_name = f"BPinit_phase_plotly_interactive_{i}.html"
             fig.write_html(f"{output_folder}/{out_html_name}")
 
             fig_names[f"{label} {i+1}"] = out_html_name
