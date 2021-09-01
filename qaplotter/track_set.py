@@ -2,6 +2,8 @@
 from glob import glob
 import os
 
+from astropy.table import table
+
 from .utils import (read_field_data_tables,
                     read_bpcal_data_tables,
                     read_delay_data_tables,
@@ -14,6 +16,9 @@ from .utils import (read_field_data_tables,
 from .parse_weblog import get_field_intents
 
 from .field_plots import target_scan_figure, calibrator_scan_figure
+
+from .target_summary_plots import target_summary_ampfreq_figure, target_summary_amptime_figure
+
 from .bp_plots import bp_amp_phase_figures
 
 from .amp_phase_cal_plots import (phase_gain_figures, amp_gain_time_figures,
@@ -86,6 +91,37 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
 
         out_html_name = f"{field}_plotly_interactive.html"
         fig.write_html(f"{output_folder}/{out_html_name}")
+
+    # Create summary tables using all target fields
+    init_target = True
+
+    target_fields = []
+
+    for i, field in enumerate(fieldnames):
+    # for i, field in enumerate(fieldnames[:3]):
+
+        table_dict, meta_dict = read_field_data_tables(field, folder)
+
+        try:
+            field_intent = get_field_intents(field, meta_dict['amp_chan']['vis'])
+        except Exception as e:
+            field_intent = ''
+
+        if "target" in field_intent.lower():
+            target_fields.append(field)
+
+    # Create target field summary plots
+    # First check that there were target fields.
+
+    if len(target_fields) > 0:
+
+        fig_summ_time = target_summary_amptime_figure(target_fields, folder, corrs=corrs)
+        out_html_name = f"target_amptime_summary_plotly_interactive.html"
+        fig_summ_time.write_html(f"{output_folder}/{out_html_name}")
+
+        fig_summ_freq = target_summary_ampfreq_figure(target_fields, folder, corrs=corrs)
+        out_html_name = f"target_ampfreq_summary_plotly_interactive.html"
+        fig_summ_freq.write_html(f"{output_folder}/{out_html_name}")
 
     # Make the linking files into the same folder.
     make_all_html_links(flagging_sheet_link, output_folder, field_intents, meta_dict_0)

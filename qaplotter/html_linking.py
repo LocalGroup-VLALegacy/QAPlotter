@@ -141,6 +141,23 @@ def make_all_html_links(flagging_sheet_link, folder, field_dict, ms_info_dict):
                                ms_info_dict),
           file=open(index_file, 'a'))
 
+    # Make linking files for the target summary plots:
+    targsumm1_file = mypath / f"linker_target_amptime_summary_plotly_interactive.html"
+
+    if targsumm1_file.exists():
+        targsumm1_file.unlink()
+
+    print(make_targsumm_html_page("target_amptime_summary", flagging_sheet_link, field_dict, active_idx=0),
+            file=open(targsumm1_file, 'a'))
+
+    targsumm2_file = mypath / f"linker_target_ampfreq_summary_plotly_interactive.html"
+
+    if targsumm2_file.exists():
+        targsumm2_file.unlink()
+
+    print(make_targsumm_html_page("target_ampfreq_summary", flagging_sheet_link, field_dict, active_idx=1),
+            file=open(targsumm2_file, 'a'))
+
     # Loop through the fields
     for i, field in enumerate(field_dict):
 
@@ -200,6 +217,32 @@ def make_plot_html_page(flagging_sheet_link, field_dict, active_idx=0):
     html_string += make_sidebar(field_dict, active_idx=active_idx)
 
     html_string += make_content_div(field_list[active_idx])
+
+    html_string += make_html_suffix()
+
+    return html_string
+
+def make_targsumm_html_page(summary_name, flagging_sheet_link, field_dict, active_idx=0):
+
+    html_string = make_html_preamble()
+
+    field_list = list(field_dict.keys())
+
+    prev_field = field_list[active_idx - 1] if active_idx != 0 else None
+    next_field = field_list[active_idx + 1] if active_idx < len(field_list) - 1 else None
+
+    html_string += make_next_previous_navbar(flagging_sheet_link, prev_field, next_field,
+                                             current_field=field_list[active_idx])
+
+    html_string += make_sidebar(field_dict, active_idx=active_idx)
+
+    summ_name = ''
+
+    html_string += f'<div class="content" id="{summary_name}">\n'
+
+    html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_name}_plotly_interactive.html" height="1000" width="100%"></iframe>\n'
+
+    html_string += '</div>\n\n'
 
     html_string += make_html_suffix()
 
@@ -374,10 +417,22 @@ def make_sidebar(field_dict, active_idx=0):
     else:
         sidebar_string += '    <a class="" href="index.html">Home</a>\n'
 
+    targsumm1_name = "target_amptime_summary_plotly_interactive"
+
+    class_is = "active" if active_idx == 0 else ""
+    sidebar_string += f'    <a class="{class_is}" href="linker_{targsumm1_name}.html">Target Summary Amp-Time</a>\n'
+
+    targsumm2_name = "target_ampfreq_summary_plotly_interactive"
+
+    class_is = "active" if active_idx == 1 else ""
+    sidebar_string += f'    <a class="{class_is}" href="linker_{targsumm2_name}.html">Target Summary Amp-Freq</a>\n'
+
     for i, field in enumerate(field_dict):
 
         # Set as active
-        if i == active_idx:
+        if active_idx is None:
+            class_is = ""
+        elif i == active_idx - 2:
             class_is = "active"
         else:
             class_is = ""

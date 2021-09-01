@@ -1,17 +1,15 @@
 
 import enum
+from glob import glob
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
 import astropy.table as table
 
+from .utils import read_field_data_tables
 
-# from .utils import read_field_data_tables
-from qaplotter.utils import read_field_data_tables
-
-# from .utils import vla_time_conversion
-from qaplotter.utils import vla_time_conversion
+from .utils import vla_time_conversion
 
 # Define a common set of markers to plot for different correlations
 # e.g. RR, LL, RL, LR
@@ -79,7 +77,7 @@ def target_summary_amptime_figure(fields, folder, show=False,
             return x
 
     for nfield, field in enumerate(fields):
-        print(f"On {field}")
+        # print(f"On {field}")
 
         table_dict, meta_dict = read_field_data_tables(field, folder)
 
@@ -257,7 +255,7 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
                    "Corr": []}
 
     for nfield, field in enumerate(fields):
-        print(f"On {field}")
+        # print(f"On {field}")
 
         table_dict, meta_dict = read_field_data_tables(field, folder)
 
