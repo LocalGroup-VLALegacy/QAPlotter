@@ -214,7 +214,7 @@ def make_plot_html_page(flagging_sheet_link, field_dict, active_idx=0):
     html_string += make_next_previous_navbar(flagging_sheet_link, prev_field, next_field,
                                              current_field=field_list[active_idx])
 
-    html_string += make_sidebar(field_dict, active_idx=active_idx)
+    html_string += make_sidebar(field_dict, active_idx=active_idx+2)
 
     html_string += make_content_div(field_list[active_idx])
 
