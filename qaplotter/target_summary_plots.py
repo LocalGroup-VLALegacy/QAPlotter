@@ -83,6 +83,10 @@ def target_summary_amptime_figure(fields, folder, show=False,
 
         tab_data = table_dict['amp_time']
 
+        if len(tab_data) == 0:
+            print(f"Field {field} is empty. Skipping")
+            continue
+
         # Add a fieldname column
         tab_data.add_column(table.Column([field] * len(tab_data),
                                          name='fieldname'))
@@ -260,6 +264,10 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
         table_dict, meta_dict = read_field_data_tables(field, folder)
 
         tab_data = table_dict['amp_chan']
+
+        if len(tab_data) == 0:
+            print(f"Field {field} is empty. Skipping")
+            continue
 
         # Add a fieldname column
         tab_data.add_column(table.Column([field] * len(tab_data),
