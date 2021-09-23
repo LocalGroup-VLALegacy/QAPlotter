@@ -5,6 +5,7 @@ from glob import glob
 import plotly.graph_objects as go
 import plotly.express as px
 import astropy.units as u
+from astropy.stats import sigma_clip, mad_std
 
 from spectral_cube import SpectralCube
 
@@ -20,7 +21,7 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
     targ0_dict = data_dict[list(data_dict.keys())[0]]
     targ_spw0_dict = targ0_dict[list(targ0_dict.keys())[0]]
 
-    is_line = len(np.array(targ_spw0_dict[1].shape).squeeze()) > 2
+    is_line = targ_spw0_dict[1].shape[0] > 1
     type_tag = "lines" if is_line else "continuum"
 
     for target in data_dict:
@@ -89,16 +90,39 @@ def make_quicklook_continuum_figure(data_dict):
     One figure w/ N_SPW panels for each target.
     '''
 
+    # Key are in form of SPW_i, where i is the ith line in that spw.
+    spw_keys = np.array(list(data_dict.keys()))
+
+    spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+
+    spw_keys_ordered = spw_keys[spw_order]
+
     data = np.stack([data_dict[key][1].with_fill_value(0.).unitless_filled_data[:].squeeze()
-                     for key in data_dict])
+                     for key in spw_keys_ordered])
 
-
-    fig = px.imshow(data, facet_col=0, facet_col_wrap=4, facet_col_spacing=0.01,
-                    facet_row_spacing=0.025, origin='lower',
+    fig = px.imshow(data, facet_col=0, facet_col_wrap=5, facet_col_spacing=0.01,
+                    facet_row_spacing=0.035, origin='lower',
                     color_continuous_scale='gray_r')
 
-    for i, label in enumerate(data_dict):
-        fig.layout.annotations[i]['text'] = f"SPW {label}"
+    # Loop through cubes to extract the freq range from the headers
+    # then include in the titles.
+    for i, spw_label in enumerate(spw_keys_ordered):
+
+        cube = data_dict[spw_label][1]
+
+        # Estimate the noise. This is a ROUGH estimate only.
+        rms_approx = mad_std(sigma_clip(cube, sigma=3.)) * cube.unit
+        rms_approx = np.round(rms_approx.to(u.mJy / u.beam), 2)
+
+        freq0 = (cube.header['CRVAL3'] * u.Unit(cube.header['CUNIT3'])).to(u.GHz)
+        del_freq = (cube.header['CDELT3'] * u.Unit(cube.header['CUNIT3'])).to(u.GHz)
+
+        freq_min = np.round(freq0 - del_freq * 0.5, 2).value
+        freq_max = np.round(freq0 + del_freq * 0.5, 2).value
+
+        spw = spw_label.split("_")[0]
+
+        fig.layout.annotations[i]['text'] = f"SPW {spw} ({freq_min}-{freq_max} GHz)<br>rms={rms_approx}"
 
     return fig
 
