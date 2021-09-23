@@ -4,6 +4,7 @@ Function for embedding interactive plots and adding links, etc.
 '''
 
 from pathlib import Path
+import numpy as np
 
 from .utils import datetime_from_msname
 
@@ -21,8 +22,6 @@ def generate_webserver_track_link(flagging_sheet_link):
     Return a link to the home page for a given track.
 
     '''
-
-    # TODO: Update to handle both continuum and lines in one page.
 
     track_links = {}
 
@@ -43,6 +42,8 @@ def generate_webserver_track_link(flagging_sheet_link):
     track_links['Field QA Plots'] = "scan_plots_QAplots/index.html"
 
     track_links['Calib QA Plots'] = "final_caltable_QAplots/index.html"
+
+    track_links['QL Images'] = "quicklook_imaging_figures/index.html"
 
     track_links['Field Names'] = "scan_plots_QAplots/fieldnames.txt"
 
@@ -628,5 +629,189 @@ def make_content_caltables_div(cal_plot):
     content_string += f'    <iframe id="igraph" scrolling="no" style="border:none;" seamless="seamless" src="{cal_plot}" height="1000" width="100%"></iframe>\n'
 
     content_string += '</div>\n\n'
+
+    return content_string
+
+
+# Functions for quicklook image figures:
+
+def make_quicklook_html_links(flagging_sheet_link, folder, target_dict,
+                              fields_per_page=5):
+
+    # Number of pages to make
+    num_targets = len(target_dict)
+    num_pages = num_targets // fields_per_page
+    if num_targets % fields_per_page > 0:
+        num_pages += 1
+
+    target_list = list(target_dict.keys())
+    target_list_split = np.array_split(target_list, num_pages)
+
+    target_dict_split = []
+    for these_targets in target_list_split:
+        these_targets_dict = {}
+        for target in these_targets:
+            these_targets_dict[target] = target_dict[target]
+        target_dict_split.append(these_targets_dict)
+
+    mypath = Path(folder)
+
+    # CSS style
+    css_file = mypath / "qa_plot.css"
+
+    if css_file.exists():
+        css_file.unlink()
+
+    print(css_page_style(), file=open(css_file, 'a'))
+
+    # index file
+    index_file = mypath / "index.html"
+
+    if index_file.exists():
+        index_file.unlink()
+
+    print(make_index_quicklook_html_page(flagging_sheet_link, target_list_split),
+          file=open(index_file, 'a'))
+
+    # Loop through the fields
+    for i, these_targets in enumerate(target_list_split):
+
+        field_file = mypath / f"linker_ql_{i}.html"
+
+        if field_file.exists():
+            field_file.unlink()
+
+        print(make_plot_quicklook_html_page(flagging_sheet_link,
+                                            target_list_split,
+                                            target_dict_split,
+                                            active_idx=i),
+              file=open(field_file, 'a'))
+
+
+def make_index_quicklook_html_page(flagging_sheet_link, target_list_split):
+
+    html_string = make_html_preamble()
+
+    # Add links to other index files, etc.
+    active_idx = 0
+    next_field = active_idx + 1 if active_idx < len(target_list_split) - 1 else None
+
+    html_string += make_next_previous_navbar_quicklook(flagging_sheet_link,
+                                                       prev_field=None,
+                                                       next_field=next_field,
+                                                       next_field_name=f"({next_field})",
+                                                       current_field=active_idx)
+
+    html_string += make_sidebar_quicklook(target_list_split, active_idx=None)
+
+    # Add in MS info:
+    html_string += '<div class="content" id="basic">\n'
+
+    html_string += '</div>\n\n'
+
+    html_string += make_html_suffix()
+
+    return html_string
+
+
+def make_next_previous_navbar_quicklook(flagging_sheet_link, prev_field=None, next_field=None,
+                                        prev_field_name=None, next_field_name=None,
+                                        current_field=None, current_field_name=None):
+    '''
+    Navbar links
+    '''
+
+    navbar_string = '<div class="navbar">\n'
+
+    if prev_field is not None:
+        navbar_string += f'    <a href="linker_ql_{prev_field}.html">{prev_field_name} (Previous)</a>\n'
+    else:
+        # If None, use current field
+        navbar_string += f'    <a href="linker_ql_{current_field}.html">{current_field_name} (Previous)</a>\n'
+
+    if next_field is not None:
+        navbar_string += f'    <a href="linker_ql_{next_field}.html">{next_field_name} (Next)</a>\n'
+    else:
+        # If None, use current field
+        navbar_string += f'    <a href="linker_ql_{current_field}.html">{current_field_name} (Next)</a>\n'
+
+    link_locations = generate_webserver_track_link(flagging_sheet_link)
+
+    for linkname in link_locations:
+
+        navbar_string += f'    <a href="../{link_locations[linkname]}">{linkname}</a>\n'
+
+    navbar_string += "</div>\n\n"
+
+    return navbar_string
+
+
+def make_sidebar_quicklook(target_list_split, active_idx=0):
+    '''
+    Persistent side bar with all field names. For quick switching.
+    '''
+
+    sidebar_string = '<div class="sidebar">\n'
+
+    if active_idx is None:
+        sidebar_string += '    <a class="active" href="index.html">Home</a>\n'
+    else:
+        sidebar_string += '    <a class="" href="index.html">Home</a>\n'
+
+    for i, these_targets in enumerate(target_list_split):
+
+        # Combine into a string of all targets
+        these_targets_str = f"({active_idx}) " + "\n".join(these_targets)
+
+        # Set as active
+        if i == active_idx:
+            class_is = "active"
+        else:
+            class_is = ""
+
+        sidebar_string += f'    <a class="{class_is}" href="linker_ql_{i}.html">{these_targets_str}</a>\n'
+
+    sidebar_string += '</div>\n\n'
+
+    return sidebar_string
+
+
+def make_plot_quicklook_html_page(flagging_sheet_link, target_list_split,
+                                  target_dict_split, active_idx=0):
+
+    html_string = make_html_preamble()
+
+    prev_field = active_idx - 1 if active_idx != 0 else None
+    next_field = active_idx + 1 if active_idx < len(target_list_split) - 1 else None
+
+    html_string += make_next_previous_navbar_quicklook(flagging_sheet_link,
+                                                       prev_field=prev_field,
+                                                       prev_field_name=f"({prev_field})",
+                                                       next_field=next_field,
+                                                       next_field_name=f"({next_field})",
+                                                       current_field=active_idx,
+                                                       current_field_name=f"({active_idx})")
+
+    html_string += make_sidebar_quicklook(target_list_split, active_idx=active_idx)
+
+    html_string += make_content_quicklook_div(target_list_split[active_idx],
+                                              target_dict_split[active_idx])
+
+    html_string += make_html_suffix()
+
+    return html_string
+
+
+def make_content_quicklook_div(these_targets, these_targets_dict):
+
+    content_string = ""
+
+    for target in these_targets:
+
+        content_string += f'<div class="content" id="{target}">\n'
+
+        content_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{these_targets_dict[target]}" height="1000" width="100%"></iframe>\n'
+
+        content_string += '</div>\n\n'
 
     return content_string
