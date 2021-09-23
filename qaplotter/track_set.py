@@ -352,6 +352,7 @@ def make_all_plots(msname=None,
 
         if os.path.exists(folder_BPs):
             folder_cals = folder_BPs
+
         else:
             print("No cal plot txt files were found. Skipping.")
             return
@@ -359,5 +360,9 @@ def make_all_plots(msname=None,
     # Calibration plots
     make_all_cal_plots(flagging_sheet_link, folder_cals, output_folder_cals)
 
-    # Quicklook target images
-    make_all_quicklook_plots(flagging_sheet_link, folder_qlimg, output_folder_qlimg)
+    if os.path.exist(folder_qlimg):
+        # Quicklook target images
+        make_all_quicklook_plots(flagging_sheet_link, folder_qlimg, output_folder_qlimg)
+
+    else:
+        print("No cal plot txt files were found. Skipping.")
