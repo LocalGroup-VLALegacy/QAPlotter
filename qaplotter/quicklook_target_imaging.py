@@ -24,6 +24,8 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
     is_line = targ_spw0_dict[1].shape[0] > 1
     type_tag = "lines" if is_line else "continuum"
 
+    targetname_dict = {}
+
     for target in data_dict:
 
         target_dict = data_dict[target]
@@ -36,6 +38,9 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
         out_html_name = f"quicklook-{target}-{type_tag}-plotly_interactive.html"
         fig.write_html(f"{output_foldername}/{out_html_name}")
 
+        targetname_dict[target] = out_html_name
+
+    return targetname_dict
 
 def load_quicklook_images(foldername, suffix='image'):
     '''
