@@ -29,9 +29,9 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
         target_dict = data_dict[target]
 
         if is_line:
-            fig = make_quicklook_lines_figure(target_dict)
+            fig = make_quicklook_lines_figure(target_dict, target)
         else:
-            fig = make_quicklook_continuum_figure(target_dict)
+            fig = make_quicklook_continuum_figure(target_dict, target)
 
         out_html_name = f"quicklook-{target}-{type_tag}-plotly_interactive.html"
         fig.write_html(f"{output_foldername}/{out_html_name}")
@@ -85,7 +85,7 @@ def load_quicklook_images(foldername, suffix='image'):
     return data_dict
 
 
-def make_quicklook_continuum_figure(data_dict):
+def make_quicklook_continuum_figure(data_dict, target_name):
     '''
     One figure w/ N_SPW panels for each target.
     '''
@@ -101,7 +101,7 @@ def make_quicklook_continuum_figure(data_dict):
                      for key in spw_keys_ordered])
 
     fig = px.imshow(data, facet_col=0, facet_col_wrap=5, facet_col_spacing=0.01,
-                    facet_row_spacing=0.035, origin='lower',
+                    facet_row_spacing=0.04, origin='lower',
                     color_continuous_scale='gray_r')
 
     # Loop through cubes to extract the freq range from the headers
@@ -124,10 +124,18 @@ def make_quicklook_continuum_figure(data_dict):
 
         fig.layout.annotations[i]['text'] = f"SPW {spw} ({freq_min}-{freq_max} GHz)<br>rms={rms_approx}"
 
+    fig.update_layout(
+        title=target_name,
+        margin=dict(t=100, pad=4),
+        font=dict(family="Courier New, monospace",
+                  size=15,
+                  color="#7f7f7f")
+    )
+
     return fig
 
 
-def make_quicklook_lines_figure(data_dict):
+def make_quicklook_lines_figure(data_dict, target_name):
     '''
     One figure animated along the spectral axis w/ N_SPW panels for each target.
 
@@ -183,5 +191,13 @@ def make_quicklook_lines_figure(data_dict):
 
     fig.update_layout(autosize=True,
                       height=600,)
+
+    fig.update_layout(
+        title=target_name,
+        margin=dict(t=100, pad=4),
+        font=dict(family="Courier New, monospace",
+                  size=15,
+                  color="#7f7f7f")
+    )
 
     return fig
