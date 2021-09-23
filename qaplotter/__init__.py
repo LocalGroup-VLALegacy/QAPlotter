@@ -6,6 +6,8 @@
 from ._astropy_init import *   # noqa
 # ----------------------------------------------------------------------------
 
-from .track_set import make_all_plots, make_field_plots, make_all_cal_plots
+from .track_set import (make_all_plots, make_field_plots, make_all_cal_plots,
+                        make_all_quicklook_plots)
 
-__all__ = ['make_all_plots', 'make_field_plots', 'make_all_cal_plots']
+__all__ = ['make_all_plots', 'make_field_plots', 'make_all_cal_plots',
+           'make_all_quicklook_plots']
