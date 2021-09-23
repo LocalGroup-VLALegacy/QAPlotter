@@ -52,7 +52,7 @@ def target_summary_amptime_figure(fields, folder, show=False,
     fig = make_subplots(rows=nrow, cols=ncol, subplot_titles=subplot_titles,
                         shared_xaxes=False, shared_yaxes=False)
 
-    hovertemplate = 'Field name: %{customdata[0]}<br>Field number: %{customdata[1]}<br>Scan: %{customdata[2]}<br>SPW: %{customdata[3]}<br>Corr: %{customdata[4]}'
+    hovertemplate = 'Field name: %{customdata[0]}<br>Field number: %{customdata[1]}<br>Scan: %{customdata[2]}<br>SPW: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Time: %{customdata[5]}'
 
     def make_casa_timestring(x):
 
@@ -111,7 +111,8 @@ def target_summary_amptime_figure(fields, folder, show=False,
                                         tab_data['field'][all_mask].tolist(),
                                         tab_data['scan'][all_mask].tolist(),
                                         tab_data['spw'][all_mask].tolist(),
-                                        tab_data['corr'][all_mask].tolist())).T
+                                        tab_data['corr'][all_mask].tolist(),
+                                        make_casa_timestring(tab_data['time'][all_mask].tolist())).T
 
                 # We're also going to record colors based on Scan and field
                 # SPW are unique and the colour palette has 11 colours.
