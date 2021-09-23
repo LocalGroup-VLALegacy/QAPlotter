@@ -19,13 +19,16 @@ from .field_plots import target_scan_figure, calibrator_scan_figure
 
 from .target_summary_plots import target_summary_ampfreq_figure, target_summary_amptime_figure
 
+from .quicklook_target_imaging import make_quicklook_figures
+
 from .bp_plots import bp_amp_phase_figures
 
 from .amp_phase_cal_plots import (phase_gain_figures, amp_gain_time_figures,
                                   delay_freq_figures, amp_gain_freq_figures)
 
 from .html_linking import (make_all_html_links, make_html_homepage,
-                           make_caltable_all_html_links)
+                           make_caltable_all_html_links,
+                           make_quicklook_html_links)
 
 
 def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
@@ -272,12 +275,33 @@ def make_all_cal_plots(flagging_sheet_link, folder, output_folder):
         make_caltable_all_html_links(flagging_sheet_link, output_folder, fig_names, meta_dict_0)
 
 
+def make_all_quicklook_plots(flagging_sheet_link, folder="quicklook_imaging",
+                             output_folder="quicklook_imaging_figures"):
+
+    # Generate the quicklook plots.
+    target_dict = make_quicklook_figures(folder, output_folder)
+
+    # Identify if these are continuum or line plots
+    # The line plots will tend to be larger, so we just want to
+    # decrease the number of fields per page for the lines.
+    filenames = glob(f"{output_folder}/*.html")
+    if any(["continuum" in filename for filename in filenames]):
+        fields_per_page = 10
+    else:
+        fields_per_page = 5
+
+    make_quicklook_html_links(flagging_sheet_link, output_folder, target_dict,
+                              fields_per_page=fields_per_page)
+
+
 def make_all_plots(msname=None,
                    folder_fields="scan_plots_txt",
                    output_folder_fields="scan_plots_QAplots",
                    folder_BPs="finalBPcal_txt",
                    folder_cals="final_caltable_txt",
                    output_folder_cals="final_caltable_QAplots",
+                   folder_qlimg="quicklook_imaging",
+                   output_folder_qlimg="quicklook_imaging_figures",
                    save_fieldnames=True,
                    flagging_sheet_link=None,
                    corrs=['RR', 'LL']):
@@ -332,4 +356,8 @@ def make_all_plots(msname=None,
             print("No cal plot txt files were found. Skipping.")
             return
 
+    # Calibration plots
     make_all_cal_plots(flagging_sheet_link, folder_cals, output_folder_cals)
+
+    # Quicklook target images
+    make_all_quicklook_plots(flagging_sheet_link, folder_qlimg, output_folder_qlimg)
