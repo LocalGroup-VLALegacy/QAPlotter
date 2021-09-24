@@ -68,6 +68,11 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
         tab_data = table_dict[key]
 
+        # Check if the table is empty
+        if len(tab_data) == 0:
+            print("Empty data table found. Skipping")
+            continue
+
         for nspw, spw in enumerate(spw_nums):
 
             spw_mask = tab_data['spw'] == spw
