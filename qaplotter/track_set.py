@@ -360,7 +360,7 @@ def make_all_plots(msname=None,
     # Calibration plots
     make_all_cal_plots(flagging_sheet_link, folder_cals, output_folder_cals)
 
-    if os.path.exist(folder_qlimg):
+    if os.path.exists(folder_qlimg):
         # Quicklook target images
         make_all_quicklook_plots(flagging_sheet_link, folder_qlimg, output_folder_qlimg)
 
