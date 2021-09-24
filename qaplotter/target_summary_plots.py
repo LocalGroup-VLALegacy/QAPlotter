@@ -254,7 +254,7 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
     fig = make_subplots(rows=nrow, cols=ncol, subplot_titles=subplot_titles,
                         shared_xaxes=False, shared_yaxes=False)
 
-    hovertemplate = 'SPW: %{customdata[0]}<br>Field: %{customdata[1]}<br>Field number: %{customdata[2]}<br>Scan: %{customdata[3]}<br>Corr: %{customdata[4]}'
+    hovertemplate = 'SPW: %{customdata[0]}<br>Field: %{customdata[1]}<br>Field number: %{customdata[2]}<br>Scan: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Channel: %{customdata[5]}'
 
     colors_dict = {"SPW": [], "Scan": [],
                    "Corr": []}
@@ -294,7 +294,8 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
                                         tab_data['fieldname'][all_mask].tolist(),
                                         tab_data['field'][all_mask].tolist(),
                                         tab_data['scan'][all_mask].tolist(),
-                                        tab_data['corr'][all_mask].tolist())).T
+                                        tab_data['corr'][all_mask].tolist(),
+                                        tab_data['chan'][all_mask].tolist())).T
 
                 # We're also going to record colors based on Scan and field
                 # SPW are unique and the colour palette has 11 colours.
