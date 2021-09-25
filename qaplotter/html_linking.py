@@ -761,7 +761,7 @@ def make_sidebar_quicklook(target_list_split, active_idx=0):
     for i, these_targets in enumerate(target_list_split):
 
         # Combine into a string of all targets
-        these_targets_str = f"({active_idx}) " + "\n".join(these_targets)
+        these_targets_str = f"({active_idx}) " + "<br>".join(these_targets)
 
         # Set as active
         if i == active_idx:
