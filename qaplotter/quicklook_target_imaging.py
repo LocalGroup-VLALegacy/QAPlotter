@@ -1,5 +1,6 @@
 
 import os
+import warnings
 import numpy as np
 from glob import glob
 import plotly.graph_objects as go
@@ -8,6 +9,7 @@ import astropy.units as u
 from astropy.stats import sigma_clip, mad_std
 
 from spectral_cube import SpectralCube
+from spectral_cube.utils import StokesWarning
 
 def make_quicklook_figures(foldername, output_foldername, suffix='image'):
 
@@ -69,7 +71,11 @@ def load_quicklook_images(foldername, suffix='image'):
         for i, (spw, line, cubename) in enumerate(zip(spw_nums, line_names, target_cubenames)):
             # NOTE: this is OK because the continuum images still have 3 dimensions.
             # This works for now, but spectral-cube may eventually change
-            this_cube = SpectralCube.read(target_cubenames[i], format='casa')
+
+            with warnings.catch_warnings():
+                warnings.simplefilter(action='ignore', category=StokesWarning)
+
+                this_cube = SpectralCube.read(target_cubenames[i], format='casa')
 
             # If an actual spectral line cube, change to VRAD
             if this_cube.shape[0] > 1:
@@ -208,10 +214,10 @@ def make_quicklook_lines_figure(data_dict, target_name):
     if "HI" in line_names:
         hi_label = spw_keys[line_names == "HI"][0]
 
-        noise_rms = data_dict[hi_label][1].mad_std()
+        noise_rms = data_dict[hi_label][1].mad_std(ignore_nan=True)
         high_val = np.nanpercentile(data_dict[hi_label][1], 99.5)
     else:
-        noise_rms = data_dict[list(data_dict.keys())[0]][1].mad_std()
+        noise_rms = data_dict[list(data_dict.keys())[0]][1].mad_std(ignore_nan=True)
         high_val = np.nanpercentile(data_dict[list(data_dict.keys())[0]][1], 99.5)
 
     noise_rms = noise_rms.value if hasattr(noise_rms, 'unit') else noise_rms
