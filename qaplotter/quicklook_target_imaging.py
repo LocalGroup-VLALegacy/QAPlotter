@@ -121,10 +121,10 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
             new_data[data_slice] = this_data
 
-            data_array.append(data_array)
+            data_array.append(new_data.squeeze())
 
         else:
-            data_array.append(this_data)
+            data_array.append(this_data.squeeze())
 
     data = np.stack(data_array)
 
@@ -189,10 +189,10 @@ def make_quicklook_lines_figure(data_dict, target_name):
 
             new_data[data_slice] = this_data
 
-            data_array.append(data_array)
+            data_array.append(new_data.squeeze())
 
         else:
-            data_array.append(this_data)
+            data_array.append(this_data.squeeze())
 
     data = np.stack(data_array)
 
