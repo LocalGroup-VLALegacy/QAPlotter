@@ -286,9 +286,9 @@ def make_all_quicklook_plots(flagging_sheet_link, folder="quicklook_imaging",
     # decrease the number of fields per page for the lines.
     filenames = glob(f"{output_folder}/*.html")
     if any(["continuum" in filename for filename in filenames]):
-        fields_per_page = 10
-    else:
         fields_per_page = 5
+    else:
+        fields_per_page = 3
 
     make_quicklook_html_links(flagging_sheet_link, output_folder, target_dict,
                               fields_per_page=fields_per_page)
@@ -365,4 +365,4 @@ def make_all_plots(msname=None,
         make_all_quicklook_plots(flagging_sheet_link, folder_qlimg, output_folder_qlimg)
 
     else:
-        print("No cal plot txt files were found. Skipping.")
+        print("No quicklook images were found. Skipping.")
