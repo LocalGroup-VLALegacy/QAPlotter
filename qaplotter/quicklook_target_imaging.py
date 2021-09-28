@@ -59,7 +59,7 @@ def load_quicklook_images(foldername, suffix='image'):
 
         data_dict[target] = {}
 
-        target_cubenames = [cubename for cubename in all_cubenames if target in cubename]
+        target_cubenames = [cubename for cubename in all_cubenames if f'{target}-' in cubename]
 
         spw_nums = [int(cubename.split('-')[2][3:]) for cubename in target_cubenames]
         line_names = [cubename.split('-')[3] for cubename in target_cubenames]
