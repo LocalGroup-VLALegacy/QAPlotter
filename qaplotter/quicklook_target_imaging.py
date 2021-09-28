@@ -102,8 +102,31 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
     spw_keys_ordered = spw_keys[spw_order]
 
-    data = np.stack([data_dict[key][1].with_fill_value(0.).unitless_filled_data[:].squeeze()
-                     for key in spw_keys_ordered])
+    # Handle the odd case where array shapes are not equal
+    shape_dict = {}
+    for key in spw_keys_ordered:
+        shape_dict[key] = data_dict[key][1].shape
+
+    max_shape_key = max(shape_dict, key=lambda key: shape_dict[key][2])
+    max_shape = shape_dict[max_shape_key]
+
+    data_array = []
+    for key in spw_keys_ordered:
+        this_data = data_dict[key][1].with_fill_value(0.).unitless_filled_data[:]
+
+        if this_data.shape != max_shape:
+            new_data = np.zeros(max_shape, dtype=this_data.dtype)
+
+            data_slice = tuple([slice(0, shape_i) for shape_i in this_data.shape])
+
+            new_data[data_slice] = this_data
+
+            data_array.append(data_array)
+
+        else:
+            data_array.append(this_data)
+
+    data = np.stack(data_array)
 
     fig = px.imshow(data, facet_col=0, facet_col_wrap=5, facet_col_spacing=0.01,
                     facet_row_spacing=0.04, origin='lower',
@@ -155,8 +178,23 @@ def make_quicklook_lines_figure(data_dict, target_name):
 
     spw_keys_ordered = spw_keys[spw_order]
 
-    data = np.stack([data_dict[key][1].with_fill_value(0.).unitless_filled_data[:]
-                     for key in spw_keys_ordered])
+    data_array = []
+    for key in spw_keys_ordered:
+        this_data = data_dict[key][1].with_fill_value(0.).unitless_filled_data[:]
+
+        if this_data.shape != max_shape:
+            new_data = np.zeros(max_shape, dtype=this_data.dtype)
+
+            data_slice = tuple([slice(0, shape_i) for shape_i in this_data.shape])
+
+            new_data[data_slice] = this_data
+
+            data_array.append(data_array)
+
+        else:
+            data_array.append(this_data)
+
+    data = np.stack(data_array)
 
     # Use the HI data (if present) to estimate color range.
     if "HI" in line_names:
