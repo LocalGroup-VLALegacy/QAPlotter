@@ -16,14 +16,11 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
     if not os.path.exists(output_foldername):
         os.mkdir(output_foldername)
 
-    data_dict = load_quicklook_images(foldername, suffix=suffix)
+    data_dict, data0_shape = load_quicklook_images(foldername, suffix=suffix)
 
     # Check if we have line or continuum data based on the cube shape.
     # NOTE: this assumes we have not mixed continuum and lines.
-    targ0_dict = data_dict[list(data_dict.keys())[0]]
-    targ_spw0_dict = targ0_dict[list(targ0_dict.keys())[0]]
-
-    is_line = targ_spw0_dict[1].shape[0] > 1
+    is_line = data0_shape[0] > 1
     type_tag = "lines" if is_line else "continuum"
 
     targetname_dict = {}
@@ -57,7 +54,9 @@ def load_quicklook_images(foldername, suffix='image'):
 
     data_dict = {}
 
-    for target in target_names:
+    data_shape = None
+
+    for jj, target in enumerate(target_names):
 
         data_dict[target] = {}
 
@@ -68,18 +67,21 @@ def load_quicklook_images(foldername, suffix='image'):
 
         # SPWs aren't unique b/c we have the 1665 and 1667 lines in the same SPW.
         # So we'll label with strings and iterate through multiples for keys.
-        for i, (spw, line, cubename) in enumerate(zip(spw_nums, line_names, target_cubenames)):
+
+
+        for ii, (spw, line, cubename) in enumerate(zip(spw_nums, line_names, target_cubenames)):
             # NOTE: this is OK because the continuum images still have 3 dimensions.
             # This works for now, but spectral-cube may eventually change
 
-            with warnings.catch_warnings():
-                warnings.simplefilter(action='ignore', category=StokesWarning)
+            # Read in single cubes until we get a valid shape out.
+            # This is just to check continuum vs. spectral line.
+            if data_shape is None:
+                data0 = read_data(target_cubenames[ii])
 
-                this_cube = SpectralCube.read(target_cubenames[i], format='casa')
+                if data0 is not None:
+                    data_shape = data0.shape
 
-            # If an actual spectral line cube, change to VRAD
-            if this_cube.shape[0] > 1:
-                this_cube = this_cube.with_spectral_unit(u.km / u.s, velocity_convention='radio')
+                    del data0
 
             # Make dict label
             current_keys = list(data_dict[target].keys())
@@ -91,9 +93,29 @@ def load_quicklook_images(foldername, suffix='image'):
                 else:
                     break
 
-            data_dict[target][spw_label] = [line, this_cube, cubename]
+            data_dict[target][spw_label] = [line, cubename]
 
-    return data_dict
+    return data_dict, data_shape
+
+
+def read_data(cubename):
+
+    with warnings.catch_warnings():
+        warnings.simplefilter(action='ignore', category=StokesWarning)
+
+        try:
+            this_cube = SpectralCube.read(cubename, format='casa')
+        except ValueError as err:
+            print(f"{cubename} encountered error")
+            print(f"{err}")
+
+            return None
+
+    # If an actual spectral line cube, change to VRAD
+    if this_cube.shape[0] > 1:
+        this_cube = this_cube.with_spectral_unit(u.m / u.s, velocity_convention='radio')
+
+    return this_cube
 
 
 def make_quicklook_continuum_figure(data_dict, target_name):
@@ -109,16 +131,39 @@ def make_quicklook_continuum_figure(data_dict, target_name):
     spw_keys_ordered = spw_keys[spw_order]
 
     # Handle the odd case where array shapes are not equal
+    # Load the cubes in to get the shapes
     shape_dict = {}
     for key in spw_keys_ordered:
-        shape_dict[key] = data_dict[key][1].shape
+        this_cube = read_data(data_dict[key][1])
+        if this_cube is None:
+            continue
+
+        shape_dict[key] = this_cube.shape
+        del this_cube
 
     max_shape_key = max(shape_dict, key=lambda key: shape_dict[key][2])
     max_shape = shape_dict[max_shape_key]
 
     data_array = []
+    data_info = {}
     for key in spw_keys_ordered:
-        this_data = data_dict[key][1].with_fill_value(0.).unitless_filled_data[:]
+
+        # Load the cube in.
+        this_cube = read_data(data_dict[key][1])
+        if this_cube is None:
+            continue
+
+        try:
+            this_data = this_cube.with_fill_value(0.).unitless_filled_data[:]
+        except ValueError:
+            continue
+
+        freq0 = (this_cube.header['CRVAL3'] * u.Unit(this_cube.header['CUNIT3'])).to(u.GHz)
+        del_freq = (this_cube.header['CDELT3'] * u.Unit(this_cube.header['CUNIT3'])).to(u.GHz)
+
+        data_unit = this_cube.unit
+
+        del this_cube
 
         if this_data.shape != max_shape:
             new_data = np.zeros(max_shape, dtype=this_data.dtype)
@@ -132,11 +177,20 @@ def make_quicklook_continuum_figure(data_dict, target_name):
         else:
             data_array.append(this_data.squeeze())
 
+        # Estimate the noise. This is a ROUGH estimate only.
+        rms_approx = mad_std(sigma_clip(this_data[np.nonzero(this_data)], sigma=3.)) * data_unit
+        rms_approx = np.round(rms_approx.to(u.mJy / u.beam), 2)
+
+        data_info[key] = [rms_approx, freq0, del_freq]
+
     data = np.stack(data_array)
+
+    low_val, high_val = np.nanpercentile(data[np.nonzero(data)], [0.01, 99.99])
 
     fig = px.imshow(data, facet_col=0, facet_col_wrap=5, facet_col_spacing=0.01,
                     facet_row_spacing=0.04, origin='lower',
-                    color_continuous_scale='gray_r')
+                    color_continuous_scale='gray_r',
+                    range_color=[low_val, high_val])
 
     # Loop through cubes to extract the freq range from the headers
     # then include in the titles.
@@ -144,12 +198,7 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
         cube = data_dict[spw_label][1]
 
-        # Estimate the noise. This is a ROUGH estimate only.
-        rms_approx = mad_std(sigma_clip(cube, sigma=3.)) * cube.unit
-        rms_approx = np.round(rms_approx.to(u.mJy / u.beam), 2)
-
-        freq0 = (cube.header['CRVAL3'] * u.Unit(cube.header['CUNIT3'])).to(u.GHz)
-        del_freq = (cube.header['CDELT3'] * u.Unit(cube.header['CUNIT3'])).to(u.GHz)
+        rms_approx, freq0, del_freq = data_info[spw_label]
 
         freq_min = np.round(freq0 - del_freq * 0.5, 2).value
         freq_max = np.round(freq0 + del_freq * 0.5, 2).value
@@ -185,16 +234,46 @@ def make_quicklook_lines_figure(data_dict, target_name):
     spw_keys_ordered = spw_keys[spw_order]
 
     # Handle the odd case where array shapes are not equal
+    # Load the cubes in to get the shapes
     shape_dict = {}
     for key in spw_keys_ordered:
-        shape_dict[key] = data_dict[key][1].shape
+        this_cube = read_data(data_dict[key][1])
+        if this_cube is None:
+            continue
+
+        shape_dict[key] = this_cube.shape
+        del this_cube
 
     max_shape_key = max(shape_dict, key=lambda key: shape_dict[key][2])
     max_shape = shape_dict[max_shape_key]
 
+    if "HI" in line_names:
+        idx_noise_calc = spw_keys[line_names == "HI"][0]
+    else:
+        idx_noise_calc = spw_keys_ordered[0]
+
     data_array = []
-    for key in spw_keys_ordered:
-        this_data = data_dict[key][1].with_fill_value(0.).unitless_filled_data[:]
+    for kk, key in enumerate(spw_keys_ordered):
+
+        # Load the cube in.
+        this_cube = read_data(data_dict[key][1])
+        if this_cube is None:
+            continue
+
+        try:
+            this_data = this_cube.with_fill_value(0.).unitless_filled_data[:]
+        except ValueError:
+            continue
+
+        if key == idx_noise_calc:
+            noise_rms = mad_std(this_data[np.nonzero(this_data)], ignore_nan=True)
+            high_val = np.nanpercentile(this_data[np.nonzero(this_data)], 99.5)
+
+        # Also get the spectral axis. Assumes cubes are spectrall matched which is our default.
+        if kk == 0:
+            spectral_axis = this_cube.spectral_axis.to(u.km / u.s)
+
+        del this_cube
 
         if this_data.shape != max_shape:
             new_data = np.zeros(max_shape, dtype=this_data.dtype)
@@ -210,16 +289,7 @@ def make_quicklook_lines_figure(data_dict, target_name):
 
     data = np.stack(data_array)
 
-    # Use the HI data (if present) to estimate color range.
-    if "HI" in line_names:
-        hi_label = spw_keys[line_names == "HI"][0]
-
-        noise_rms = data_dict[hi_label][1].mad_std(ignore_nan=True)
-        high_val = np.nanpercentile(data_dict[hi_label][1], 99.5)
-    else:
-        noise_rms = data_dict[list(data_dict.keys())[0]][1].mad_std(ignore_nan=True)
-        high_val = np.nanpercentile(data_dict[list(data_dict.keys())[0]][1], 99.5)
-
+    # Strip units if present
     noise_rms = noise_rms.value if hasattr(noise_rms, 'unit') else noise_rms
     high_val = high_val.value if hasattr(high_val, 'unit') else high_val
 
@@ -237,14 +307,12 @@ def make_quicklook_lines_figure(data_dict, target_name):
         line_label = data_dict[spw_label][0]
         fig.layout.annotations[i]['text'] = f"SPW {spw} ({line_label})"
 
-    spec_axis = data_dict[spw_keys_ordered[0]][1].spectral_axis
-
     # Velocity steps
     for step in fig.layout['sliders'][0]['steps']:
         chan_num = int(step.label)
 
         # Update the label to include the velocity:
-        step.label = f"{chan_num} ({np.round(spec_axis[chan_num], 1)})"
+        step.label = f"{chan_num} ({np.round(spectral_axis[chan_num], 1)})"
 
     fig.update_layout(autosize=True,
                       height=600,)
