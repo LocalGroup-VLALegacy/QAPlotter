@@ -111,7 +111,7 @@ def read_data(cubename):
 
         try:
             this_cube = SpectralCube.read(cubename, format=file_format)
-        except ValueError as err:
+        except (ValueError, OSError) as err:
             print(f"{cubename} encountered error")
             print(f"{err}")
 
@@ -152,16 +152,20 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
     data_array = []
     data_info = {}
+    valid_data = {}
     for key in spw_keys_ordered:
 
         # Load the cube in.
         this_cube = read_data(data_dict[key][1])
         if this_cube is None:
-            continue
+            valid_data[key] = False
+        else:
+            valid_data[key] = True
 
         try:
             this_data = this_cube.with_fill_value(0.).unitless_filled_data[:]
         except ValueError:
+            valid_data[key] = False
             continue
 
         freq0 = (this_cube.header['CRVAL3'] * u.Unit(this_cube.header['CUNIT3'])).to(u.GHz)
@@ -201,18 +205,23 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
     # Loop through cubes to extract the freq range from the headers
     # then include in the titles.
-    for i, spw_label in enumerate(spw_keys_ordered):
+    i = 0
+    for spw_label in spw_keys_ordered:
 
-        cube = data_dict[spw_label][1]
+        # Check if the data was OK and we were able to load it in.
+        if not valid_data[spw_label]:
+            continue
+
+        spw = spw_label.split("_")[0]
 
         rms_approx, freq0, del_freq = data_info[spw_label]
 
         freq_min = np.round(freq0 - del_freq * 0.5, 2).value
         freq_max = np.round(freq0 + del_freq * 0.5, 2).value
 
-        spw = spw_label.split("_")[0]
-
         fig.layout.annotations[i]['text'] = f"SPW {spw} ({freq_min}-{freq_max} GHz)<br>rms={rms_approx}"
+
+        i += 1
 
     fig.update_layout(
         title=target_name,
@@ -260,16 +269,21 @@ def make_quicklook_lines_figure(data_dict, target_name):
         idx_noise_calc = spw_keys_ordered[0]
 
     data_array = []
+    valid_data = {}
     for kk, key in enumerate(spw_keys_ordered):
 
         # Load the cube in.
         this_cube = read_data(data_dict[key][1])
         if this_cube is None:
+            valid_data[key] = False
             continue
+        else:
+            valid_data[key] = True
 
         try:
             this_data = this_cube.with_fill_value(0.).unitless_filled_data[:]
         except ValueError:
+            valid_data[key] = False
             continue
 
         if key == idx_noise_calc or kk == len(spw_keys_ordered) - 1:
@@ -308,12 +322,20 @@ def make_quicklook_lines_figure(data_dict, target_name):
                     range_color=[low_val, high_val],
                     binary_string=True, binary_compression_level=5)
 
-    for i, spw_label in enumerate(spw_keys_ordered):
+    i = 0
+    for spw_label in spw_keys_ordered:
+
+        # Check if the data was OK and we were able to load it in.
+        if not valid_data[spw_label]:
+            continue
 
         spw = spw_label.split("_")[0]
 
         line_label = data_dict[spw_label][0]
+
         fig.layout.annotations[i]['text'] = f"SPW {spw} ({line_label})"
+
+        i += 1
 
     # Velocity steps
     for step in fig.layout['sliders'][0]['steps']:
