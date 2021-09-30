@@ -49,6 +49,10 @@ def load_quicklook_images(foldername, suffix='image'):
     # Gather the requested files:
     all_cubenames = glob(f"{foldername}/*{suffix}")
 
+    # Optionally could be FITS files instead. Check if no cubes are found in CASA format
+    if len(all_cubenames) == 0:
+        all_cubenames = glob(f"{foldername}/*{suffix}.fits")
+
     # The name format is quicklook-FIELD-spwNUM-LINE/CONT-MSNAME
     target_names = list(set([cubename.split('-')[1] for cubename in all_cubenames]))
 
@@ -103,8 +107,10 @@ def read_data(cubename):
     with warnings.catch_warnings():
         warnings.simplefilter(action='ignore', category=StokesWarning)
 
+        file_format = 'fits' if cubename.endswith('fits') else 'casa'
+
         try:
-            this_cube = SpectralCube.read(cubename, format='casa')
+            this_cube = SpectralCube.read(cubename, format=file_format)
         except ValueError as err:
             print(f"{cubename} encountered error")
             print(f"{err}")
@@ -190,7 +196,8 @@ def make_quicklook_continuum_figure(data_dict, target_name):
     fig = px.imshow(data, facet_col=0, facet_col_wrap=5, facet_col_spacing=0.01,
                     facet_row_spacing=0.04, origin='lower',
                     color_continuous_scale='gray_r',
-                    range_color=[low_val, high_val])
+                    range_color=[low_val, high_val],
+                    binary_string=True, binary_compression_level=5)
 
     # Loop through cubes to extract the freq range from the headers
     # then include in the titles.
@@ -265,11 +272,11 @@ def make_quicklook_lines_figure(data_dict, target_name):
         except ValueError:
             continue
 
-        if key == idx_noise_calc:
+        if key == idx_noise_calc or kk == len(spw_keys_ordered) - 1:
             noise_rms = mad_std(this_data[np.nonzero(this_data)], ignore_nan=True)
             high_val = np.nanpercentile(this_data[np.nonzero(this_data)], 99.5)
 
-        # Also get the spectral axis. Assumes cubes are spectrall matched which is our default.
+        # Also get the spectral axis. Assumes cubes are spectrally matched which is our default.
         if kk == 0:
             spectral_axis = this_cube.spectral_axis.to(u.km / u.s)
 
@@ -295,10 +302,11 @@ def make_quicklook_lines_figure(data_dict, target_name):
 
     low_val = -2 * noise_rms
 
-    fig = px.imshow(data, animation_frame=1, facet_col=0, binary_string=False,
+    fig = px.imshow(data, animation_frame=1, facet_col=0,
                     labels=dict(animation_frame="Channel"),
                     origin='lower', color_continuous_scale='gray_r',
-                    range_color=[low_val, high_val])
+                    range_color=[low_val, high_val],
+                    binary_string=True, binary_compression_level=5)
 
     for i, spw_label in enumerate(spw_keys_ordered):
 
