@@ -651,7 +651,11 @@ def amp_gain_freq_figures(table_dict, meta_dict,
             if ant_num < len(ant_nums):
                 # Extract the first ant1name from the data (if it exists):
 
-                ant1_vals = table_dict[list(exp_keys.keys())[0]][ant_num]['ant1name']
+                try:
+                    ant1_vals = table_dict[list(exp_keys.keys())[0]][ant_num]['ant1name']
+                except KeyError:
+                    subplot_titles.append(f"Ant (Flagged)")
+                    continue
 
                 if len(ant1_vals) > 0:
                     subplot_titles.append(f"Ant {ant1_vals[0]}")
