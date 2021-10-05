@@ -13,7 +13,7 @@ from .utils import (read_field_data_tables,
                     read_ampgaincal_freq_data_tables,
                     read_phasegaincal_data_tables)
 
-from .parse_weblog import get_field_intents
+from .parse_weblog import get_field_intents, extract_manual_flagging_log
 
 from .field_plots import target_scan_figure, calibrator_scan_figure
 
@@ -304,7 +304,8 @@ def make_all_plots(msname=None,
                    output_folder_qlimg="quicklook_imaging_figures",
                    save_fieldnames=True,
                    flagging_sheet_link=None,
-                   corrs=['RR', 'LL']):
+                   corrs=['RR', 'LL'],
+                   manualflag_tablename='manualflag_check.html'):
     '''
     Make both the field and BP cal plots based on the standard pipeline folder names defined
     in the ReductionPipeline package (https://github.com/LocalGroup-VLALegacy/ReductionPipeline).
@@ -341,7 +342,18 @@ def make_all_plots(msname=None,
 
     track_folder = msname
 
-    make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link)
+    # Try parsing the hifv_flagdata log to check for issues in our
+    # manual flagging commands.
+    try:
+        warn_tab = extract_manual_flagging_log(msname)
+        warn_tab.write(manualflag_tablename, overwrite=True)
+    except Exception as e:
+        print(e)
+        raise e
+        pass
+
+    make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link,
+                       manualflag_tablename=manualflag_tablename)
 
     make_field_plots(flagging_sheet_link, folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames,

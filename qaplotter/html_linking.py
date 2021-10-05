@@ -50,7 +50,8 @@ def generate_webserver_track_link(flagging_sheet_link):
     return track_links
 
 
-def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
+def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None,
+                             manualflag_tablename=None):
     '''
     Home page for the track with links to the weblogs, QA plots, etc.
     '''
@@ -79,7 +80,19 @@ def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
     except (AssertionError, ValueError):
         pass
 
+    # Try reading the table with manual flag checks:
+    html_string += f'<h3>Manual flagging commands check</h3>\n'
+    if manualflag_tablename is not None:
+        html_string += '\n'
+        html_string += f'<iframe src="{manualflag_tablename}" height="30%" width=90%>\n'
+        html_string += 'If you are seeing this, you need a browser understands IFrames.\n'
+        html_string += '</iframe>\n'
+    else:
+        html_string += '<h3>ISSUE PARSING MANUAL FLAG LOG. Please message E. Koch.</h3>\n'
+
+
     # Embed the weblog into the main page.
+
     html_string += '\n'
     html_string += '<iframe src="weblog/html/index.html" height="100%" width=90%>\n'
     html_string += 'If you are seeing this, you need a browser understands IFrames.\n'
@@ -92,7 +105,8 @@ def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
     return html_string
 
 
-def make_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
+def make_html_homepage(folder, ms_info_dict, flagging_sheet_link=None,
+                       manualflag_tablename='manualflag_check.html'):
 
     mypath = Path(folder)
 
@@ -111,7 +125,8 @@ def make_html_homepage(folder, ms_info_dict, flagging_sheet_link=None):
         index_file.unlink()
 
     print(make_index_html_homepage(folder, ms_info_dict,
-                                   flagging_sheet_link=flagging_sheet_link),
+                                   flagging_sheet_link=flagging_sheet_link,
+                                   manualflag_tablename=manualflag_tablename),
           file=open(index_file, 'a'))
 
 
