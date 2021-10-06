@@ -350,8 +350,6 @@ def make_all_plots(msname=None,
         warn_tab = extract_manual_flagging_log(orig_msname)
         warn_tab.write(manualflag_tablename, overwrite=True)
     except Exception as e:
-        print(e)
-        raise e
         pass
 
     make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link,
