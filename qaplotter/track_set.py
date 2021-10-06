@@ -345,7 +345,9 @@ def make_all_plots(msname=None,
     # Try parsing the hifv_flagdata log to check for issues in our
     # manual flagging commands.
     try:
-        warn_tab = extract_manual_flagging_log(msname)
+        # Reduce name from TARGET_CONFIG_MSNAME
+        orig_msname = "_".join(msname.split("_")[2:])
+        warn_tab = extract_manual_flagging_log(orig_msname)
         warn_tab.write(manualflag_tablename, overwrite=True)
     except Exception as e:
         print(e)
