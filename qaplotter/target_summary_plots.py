@@ -40,7 +40,7 @@ def target_summary_amptime_figure(fields, folder, show=False,
 
         spw_nums.extend(list(set(table_dict['amp_time']['spw'])))
 
-        spw_nums = list(set(spw_nums))
+    spw_nums = list(set(spw_nums))
 
     subplot_titles = [f"SPW {spw}" for spw in spw_nums]
 
@@ -241,7 +241,7 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
 
         spw_nums.extend(list(set(table_dict['amp_time']['spw'])))
 
-        spw_nums = list(set(spw_nums))
+    spw_nums = list(set(spw_nums))
 
 
     subplot_titles = fields
