@@ -193,11 +193,14 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
         data_info[key] = [rms_approx, freq0, del_freq]
 
-    data = np.stack(data_array)
+    data = np.stack(data_array, axis=-1)
 
     low_val, high_val = np.nanpercentile(data[np.nonzero(data)], [0.01, 99.99])
 
-    fig = px.imshow(data, facet_col=0, facet_col_wrap=5, facet_col_spacing=0.01,
+    facet_col_wrap = 5
+
+    fig = px.imshow(data, facet_col=-1, facet_col_wrap=facet_col_wrap,
+                    facet_col_spacing=0.01,
                     facet_row_spacing=0.04, origin='lower',
                     color_continuous_scale='gray_r',
                     range_color=[low_val, high_val],
@@ -205,12 +208,36 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
     # Loop through cubes to extract the freq range from the headers
     # then include in the titles.
-    i = 0
-    for spw_label in spw_keys_ordered:
+    # NOTE: the ordering is backwards by row and column... so the labels cannot
+    # be given in the SPW order matching the data. Everything below is dealing with
+    # this non-numpy axis ordering in plotly.
 
-        # Check if the data was OK and we were able to load it in.
-        if not valid_data[spw_label]:
-            continue
+    ncols = facet_col_wrap
+    nrows = (
+        data.shape[-1] // ncols + 1
+        if data.shape[-1] % ncols
+        else data.shape[-1] // ncols
+    )
+
+    fig_order = np.arange(ncols * nrows)[::-1].reshape((nrows, ncols))[:, ::-1]
+    # This matches the ordering in the subplots
+    oned_order = fig_order.ravel()
+    # Except that it includes >data.shape[-1] values that we first need to clip out.
+    oned_order = oned_order[oned_order < data.shape[-1]]
+
+    spw_keys_ordered = [spw for spw in spw_keys_ordered if valid_data[spw]]
+
+    # These should now be the same shape
+    assert len(oned_order) == len(spw_keys_ordered)
+
+
+    for index in range(data.shape[-1]):
+
+        # Get position in data from the 1D ordering
+        idx = oned_order[index]
+
+        # Get the corresponding SPW to that idx in the data
+        spw_label = spw_keys_ordered[idx]
 
         spw = spw_label.split("_")[0]
 
@@ -219,9 +246,7 @@ def make_quicklook_continuum_figure(data_dict, target_name):
         freq_min = np.round(freq0 - del_freq * 0.5, 2).value
         freq_max = np.round(freq0 + del_freq * 0.5, 2).value
 
-        fig.layout.annotations[i]['text'] = f"SPW {spw} ({freq_min}-{freq_max} GHz)<br>rms={rms_approx}"
-
-        i += 1
+        fig.layout.annotations[index]['text'] = f"SPW {spw} ({freq_min}-{freq_max} GHz)<br>rms={rms_approx}"
 
     fig.update_layout(
         title=target_name,
