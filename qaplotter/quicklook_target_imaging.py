@@ -294,6 +294,7 @@ def make_quicklook_lines_figure(data_dict, target_name):
         idx_noise_calc = spw_keys_ordered[0]
 
     data_array = []
+    data_info = {}
     valid_data = {}
     for kk, key in enumerate(spw_keys_ordered):
 
@@ -319,6 +320,8 @@ def make_quicklook_lines_figure(data_dict, target_name):
         if kk == 0:
             spectral_axis = this_cube.spectral_axis.to(u.km / u.s)
 
+        data_unit = this_cube.unit
+
         del this_cube
 
         if this_data.shape != max_shape:
@@ -332,6 +335,12 @@ def make_quicklook_lines_figure(data_dict, target_name):
 
         else:
             data_array.append(this_data.squeeze())
+
+        rms_approx = mad_std(sigma_clip(this_data[np.nonzero(this_data)], sigma=3.)) * data_unit
+        rms_approx = np.round(rms_approx.to(u.mJy / u.beam), 2)
+
+        data_info[key] = rms_approx
+
 
     data = np.stack(data_array)
 
@@ -358,7 +367,9 @@ def make_quicklook_lines_figure(data_dict, target_name):
 
         line_label = data_dict[spw_label][0]
 
-        fig.layout.annotations[i]['text'] = f"SPW {spw} ({line_label})"
+        rms_approx = data_info[spw_label]
+
+        fig.layout.annotations[i]['text'] = f"SPW {spw} ({line_label})<br>rms={rms_approx}"
 
         i += 1
 
