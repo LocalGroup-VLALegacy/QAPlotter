@@ -320,7 +320,7 @@ def make_quicklook_lines_figure(data_dict, target_name):
         if kk == 0:
             spectral_axis = this_cube.spectral_axis.to(u.km / u.s)
 
-            chan_width = np.abs(np.diff(spectral_axis)[0])
+            chan_width = np.round(np.abs(np.diff(spectral_axis)[0]), 1)
 
         data_unit = this_cube.unit
 
