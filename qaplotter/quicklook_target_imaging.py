@@ -372,7 +372,7 @@ def make_quicklook_lines_figure(data_dict, target_name):
         rms_approx = data_info[spw_label][0]
         chan_width = data_info[spw_label][1]
 
-        fig.layout.annotations[i]['text'] = f"SPW {spw} ({line_label})<br>rms={rms_approx} in {chan_width} channels"
+        fig.layout.annotations[i]['text'] = f"SPW {spw} ({line_label})<br>rms={rms_approx}<br>in {chan_width} channels"
 
         i += 1
 
