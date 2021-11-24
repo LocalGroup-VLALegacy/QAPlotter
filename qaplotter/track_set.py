@@ -3,6 +3,7 @@ from glob import glob
 import os
 
 from astropy.table import table
+import numpy as np
 
 from .utils import (read_field_data_tables,
                     read_bpcal_data_tables,
@@ -11,7 +12,8 @@ from .utils import (read_field_data_tables,
                     read_phaseshortgaincal_data_tables,
                     read_ampgaincal_time_data_tables,
                     read_ampgaincal_freq_data_tables,
-                    read_phasegaincal_data_tables)
+                    read_phasegaincal_data_tables,
+                    load_spwdict)
 
 from .parse_weblog import get_field_intents, extract_manual_flagging_log
 
@@ -32,7 +34,8 @@ from .html_linking import (make_all_html_links, make_html_homepage,
 
 
 def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
-                     flagging_sheet_link=None, corrs=['RR', 'LL']):
+                     flagging_sheet_link=None, corrs=['RR', 'LL'],
+                     spw_dict=None, show_target_linesonly=True):
     '''
     Make all scan plots into an HTML for each target.
     '''
@@ -83,11 +86,15 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
         # Target
         if len(table_dict.keys()) == 3:
 
-            fig = target_scan_figure(table_dict, meta_dict, show=False, corrs=corrs)
+            fig = target_scan_figure(table_dict, meta_dict, show=False, corrs=corrs,
+                                     spw_dict=spw_dict,
+                                     show_linesonly=show_target_linesonly)
 
+        # 10 with amp/phase versus ant 1. 8 without.
         elif len(table_dict.keys()) == 10 or len(table_dict.keys()) == 8:
 
-            fig = calibrator_scan_figure(table_dict, meta_dict, show=False, corrs=corrs)
+            fig = calibrator_scan_figure(table_dict, meta_dict, show=False, corrs=corrs,
+                                         spw_dict=spw_dict)
 
         else:
             raise ValueError(f"Found {len(table_dict.keys())} tables for {field} instead of 3 or 10.")
@@ -305,7 +312,9 @@ def make_all_plots(msname=None,
                    save_fieldnames=True,
                    flagging_sheet_link=None,
                    corrs=['RR', 'LL'],
-                   manualflag_tablename='manualflag_check.html'):
+                   manualflag_tablename='manualflag_check.html',
+                   spwdict_filename="spw_definitions.npy",
+                   ):
     '''
     Make both the field and BP cal plots based on the standard pipeline folder names defined
     in the ReductionPipeline package (https://github.com/LocalGroup-VLALegacy/ReductionPipeline).
@@ -352,12 +361,18 @@ def make_all_plots(msname=None,
     except Exception as e:
         pass
 
+    if os.path.exists(spwdict_filename):
+        print(f"Found spw dictionary file.")
+        spw_dict = load_spwdict(spwdict_filename)
+    else:
+        spw_dict = None
+
     make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link,
                        manualflag_tablename=manualflag_tablename)
 
     make_field_plots(flagging_sheet_link, folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames,
-                     corrs=corrs)
+                     corrs=corrs, spw_dict=spw_dict)
 
     # For older pipeline runs, only the BP txt files will be available.
     if not os.path.exists(folder_cals):

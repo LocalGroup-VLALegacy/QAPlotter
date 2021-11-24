@@ -13,7 +13,9 @@ markers = ['circle', 'cross', 'triangle-up', 'triangle-down']
 
 def target_scan_figure(table_dict, meta_dict, show=False,
                        scatter_plot=go.Scattergl,
-                       corrs=['RR', 'LL']):
+                       corrs=['RR', 'LL'],
+                       spw_dict=None,
+                       show_linesonly=False):
     '''
     Make a 3-panel figure for target scans.
     '''
@@ -39,6 +41,29 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
 
+    # When requested, show lines only for mixed continuum/line data sets.
+    # SPWs are defined by their name when the spw_dict is passed.
+    # Lines do not have "continuum" in their name.
+    spw_labels = {}
+    if spw_dict is not None:
+        for key in spw_dict:
+            # Filter out the continuum SPWs
+            if "continuum" in spw_dict[key]['label']:
+                continue
+            spw_labels[key] = spw_dict[key]['label']
+
+    if show_linesonly and spw_dict is not None:
+        line_spw_nums = []
+        for key in spw_dict:
+            # Filter out the continuum SPWs
+            if "continuum" in spw_dict[key]['label']:
+                continue
+            # In case there are SPWs not in the data.
+            if not key in spw_nums:
+                continue
+            line_spw_nums.append(key)
+
+        spw_nums = line_spw_nums
 
     def make_casa_timestring(x):
 
@@ -133,6 +158,10 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                 colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
                                             for _ in range(len(spw_data))])
 
+                spw_str = f"SPW {spw}"
+                if spw in spw_labels:
+                    spw_str += f"<br>({spw_labels[spw]})"
+
                 fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
@@ -141,7 +170,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                                                           color=colors_dict['SPW'][-1]),
                                               customdata=custom_data,
                                               hovertemplate=hovertemplate,
-                                              name=f"SPW {spw}",
+                                              name=spw_str,
                                               legendgroup=str(spw),
                                               showlegend=True if (nn == 0 and nc == 0) else False),
                                  row=exp_keys[key]['row'], col=exp_keys[key]['col'],
@@ -226,7 +255,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
 
 def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Scattergl,
-                           corrs=['RR', 'LL']):
+                           corrs=['RR', 'LL'], spw_dict=None):
     '''
     Make a 12-panel (4x3) figure for calibrator scans.
     '''
@@ -283,6 +312,14 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
+
+    spw_labels = {}
+    if spw_dict is not None:
+        for key in spw_dict:
+            # Filter out the continuum SPWs
+            if "continuum" in spw_dict[key]['label']:
+                continue
+            spw_labels[key] = spw_dict[key]['label']
 
     def make_casa_timestring(x):
 
@@ -372,6 +409,10 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                 colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
                                             for _ in range(len(spw_data))])
 
+                spw_str = f"SPW {spw}"
+                if spw in spw_labels:
+                    spw_str += f"<br>({spw_labels[spw]})"
+
                 fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
                                               y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
                                               mode='markers',
@@ -380,7 +421,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                                                           color=px.colors.qualitative.Safe[nspw % 11]),
                                               customdata=custom_data,
                                               hovertemplate=hovertemplate,
-                                              name=f"SPW {spw}",
+                                              name=spw_str,
                                               legendgroup=str(spw),
                                               showlegend=True if (nn == 0 and nc == 0) else False),
                                  row=exp_keys[key]['row'], col=exp_keys[key]['col'],
