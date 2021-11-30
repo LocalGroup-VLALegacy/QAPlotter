@@ -18,7 +18,9 @@ markers = ['circle', 'cross', 'triangle-up', 'triangle-down']
 
 def target_summary_amptime_figure(fields, folder, show=False,
                                   scatter_plot=go.Scattergl,
-                                  corrs=['RR', 'LL']):
+                                  corrs=['RR', 'LL'],
+                                  spw_dict=None,
+                                  show_linesonly=False):
     '''
     Make a N SPW-panel figure over all targets.
     '''
@@ -42,7 +44,37 @@ def target_summary_amptime_figure(fields, folder, show=False,
 
     spw_nums = list(set(spw_nums))
 
-    subplot_titles = [f"SPW {spw}" for spw in spw_nums]
+    # When requested, show lines only for mixed continuum/line data sets.
+    # SPWs are defined by their name when the spw_dict is passed.
+    # Lines do not have "continuum" in their name.
+    spw_labels = {}
+    if spw_dict is not None:
+        for spw_key in spw_dict:
+            # Filter out the continuum SPWs
+            if "continuum" in spw_dict[spw_key]['label']:
+                continue
+            spw_labels[spw_key] = spw_dict[spw_key]['label']
+
+    if show_linesonly and spw_dict is not None:
+        line_spw_nums = []
+        for spw_key in spw_dict:
+            # Filter out the continuum SPWs
+            if "continuum" in spw_dict[spw_key]['label']:
+                continue
+            # In case there are SPWs not in the data.
+            if not spw_key in spw_nums:
+                continue
+            line_spw_nums.append(spw_key)
+
+        spw_nums = line_spw_nums
+
+    subplot_titles = []
+    for spw in spw_nums:
+        spw_str = f"SPW {spw}"
+        if spw in spw_labels:
+            spw_str += f" ({spw_labels[spw]})"
+
+        subplot_titles.append(spw_str)
 
     ncol = 3
     nrow = len(spw_nums) // 3
@@ -219,7 +251,10 @@ def target_summary_amptime_figure(fields, folder, show=False,
 
 def target_summary_ampfreq_figure(fields, folder, show=False,
                                   scatter_plot=go.Scattergl,
-                                  corrs=['RR', 'LL']):
+                                  corrs=['RR', 'LL'],
+                                  spw_dict=None,
+                                  show_linesonly=False):
+
     '''
     Make a N SPW-panel figure over all targets.
     '''
@@ -243,6 +278,29 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
 
     spw_nums = list(set(spw_nums))
 
+    # When requested, show lines only for mixed continuum/line data sets.
+    # SPWs are defined by their name when the spw_dict is passed.
+    # Lines do not have "continuum" in their name.
+    spw_labels = {}
+    if spw_dict is not None:
+        for spw_key in spw_dict:
+            # Filter out the continuum SPWs
+            if "continuum" in spw_dict[spw_key]['label']:
+                continue
+            spw_labels[spw_key] = spw_dict[spw_key]['label']
+
+    if show_linesonly and spw_dict is not None:
+        line_spw_nums = []
+        for spw_key in spw_dict:
+            # Filter out the continuum SPWs
+            if "continuum" in spw_dict[spw_key]['label']:
+                continue
+            # In case there are SPWs not in the data.
+            if not spw_key in spw_nums:
+                continue
+            line_spw_nums.append(spw_key)
+
+        spw_nums = line_spw_nums
 
     subplot_titles = fields
 
@@ -320,6 +378,10 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
                 colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
                                             for _ in range(len(corr_data))])
 
+                spw_str = f"SPW {spw}"
+                if spw in spw_labels:
+                    spw_str += f"<br>({spw_labels[spw]})"
+
                 fig.append_trace(scatter_plot(x=tab_data['freq'][all_mask],
                                             y=tab_data['y'][all_mask],
                                             mode='markers',
@@ -328,7 +390,7 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
                                                         color=colors_dict['SPW'][-1]),
                                             customdata=custom_data,
                                             hovertemplate=hovertemplate,
-                                            name=f"SPW {spw}",
+                                            name=spw_str,
                                             legendgroup=str(nspw),
                                             showlegend=True if (nfield == 0 and nc == 0) else False),
                                 row=(nfield // ncol)+1, col=nfield % ncol + 1,
