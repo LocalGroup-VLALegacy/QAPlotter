@@ -320,6 +320,7 @@ def make_all_plots(msname=None,
                    corrs=['RR', 'LL'],
                    manualflag_tablename='manualflag_check.html',
                    spwdict_filename="spw_definitions.npy",
+                   show_target_linesonly=True,
                    ):
     '''
     Make both the field and BP cal plots based on the standard pipeline folder names defined
@@ -378,7 +379,8 @@ def make_all_plots(msname=None,
 
     make_field_plots(flagging_sheet_link, folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames,
-                     corrs=corrs, spw_dict=spw_dict)
+                     corrs=corrs, spw_dict=spw_dict,
+                     show_target_linesonly=show_target_linesonly)
 
     # For older pipeline runs, only the BP txt files will be available.
     if not os.path.exists(folder_cals):
