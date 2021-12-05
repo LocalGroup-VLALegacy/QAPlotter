@@ -373,6 +373,7 @@ def make_all_plots(msname=None,
         spw_dict = load_spwdict(spwdict_filename)
     else:
         spw_dict = None
+        print(f"NO spw dictionary file found.")
 
     make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link,
                        manualflag_tablename=manualflag_tablename)
