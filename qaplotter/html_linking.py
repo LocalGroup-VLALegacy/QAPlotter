@@ -660,6 +660,7 @@ def make_quicklook_html_links(flagging_sheet_link, folder, target_dict,
         num_pages += 1
 
     target_list = list(target_dict.keys())
+    target_list.sort()
     target_list_split = np.array_split(target_list, num_pages)
 
     target_dict_split = []
