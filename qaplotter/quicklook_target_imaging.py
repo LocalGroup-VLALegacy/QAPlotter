@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import astropy.units as u
 from astropy.stats import sigma_clip, mad_std
+from pandas import DataFrame
 
 from spectral_cube import SpectralCube
 from spectral_cube.utils import StokesWarning
@@ -395,3 +396,90 @@ def make_quicklook_lines_figure(data_dict, target_name):
     )
 
     return fig
+
+
+def make_quicklook_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
+    '''
+    Generate a noise summary per field per SPW to quickly identify
+    outlier images.
+    '''
+
+    all_data_info = []
+
+    for name in all_data_dict:
+
+        data_dict = all_data_dict[name]
+
+        # Key are in form of SPW_i, where i is the ith line in that spw.
+        spw_keys = np.array(list(data_dict.keys()))
+
+        spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+
+        spw_keys_ordered = spw_keys[spw_order]
+
+
+        for key in spw_keys_ordered:
+
+            # Load the cube in.
+            this_cube = read_data(data_dict[key][1])
+            if this_cube is None:
+                continue
+
+            try:
+                this_data = this_cube.with_fill_value(0.).unitless_filled_data[:]
+            except ValueError:
+                continue
+
+            freq0 = (this_cube.header['CRVAL3'] * u.Unit(this_cube.header['CUNIT3'])).to(u.GHz)
+            del_freq = (this_cube.header['CDELT3'] * u.Unit(this_cube.header['CUNIT3'])).to(u.GHz)
+
+            data_unit = this_cube.unit
+
+            del this_cube
+
+            # Estimate the noise. This is a ROUGH estimate only.
+            rms_approx = mad_std(sigma_clip(this_data[np.nonzero(this_data)], sigma=3.)) * data_unit
+            rms_approx = rms_approx.to(flux_unit).value
+
+            all_data_info.append([name, key.split("_")[0],
+                                  rms_approx, flux_unit.to_string(),
+                                  freq0.value,
+                                  del_freq.value])
+
+    df = DataFrame(all_data_info,
+                   columns=['name', "spw", "rms", "rms_unit", 'freq0', 'delta_freq'])
+
+    # return df
+
+    fig = px.line(df.sort_values(by='freq0'),
+                  x='freq0', y='rms', line_group='name', error_x='delta_freq',
+                  color='name',
+                  hover_data={'spw': True, 'freq0': ":.3f"},
+                  labels={"freq0": "Freq. (GHz)",
+                          "delta_freq": "Bandwidth (GHz)",
+                          "spw": "SPW",
+                          "rms": f"RMS ({flux_unit.to_string()})",
+                          "name": "Field"},
+                          category_orders={"name": df.sort_values(by="name")['name']},
+                  markers=True)
+
+
+    spw_order = np.unique(df['spw']).astype("int")
+    spw_order.sort()
+    spw_order = [str(val) for val in spw_order]
+
+    fig2 = px.line(df.sort_values(by='name'),
+                  x='name', y='rms', line_group='spw', error_x='delta_freq',
+                  color='spw',
+                  hover_data={'spw': True, 'freq0': ":.3f"},
+                  labels={"freq0": "Freq. (GHz)",
+                          "delta_freq": "Bandwidth (GHz)",
+                          "spw": "SPW",
+                          "rms": f"RMS ({flux_unit.to_string()})",
+                          "name": "Field"},
+                  category_orders={"spw": spw_order,
+                                   "name": df.sort_values(by="name")['name']},
+                  markers=True)
+
+    return fig, fig2, df
+
