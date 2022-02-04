@@ -292,7 +292,7 @@ def make_all_quicklook_plots(flagging_sheet_link, folder="quicklook_imaging",
                              output_folder="quicklook_imaging_figures"):
 
     # Generate the quicklook plots.
-    target_dict = make_quicklook_figures(folder, output_folder)
+    target_dict, summary_filenames = make_quicklook_figures(folder, output_folder)
 
     # Identify if these are continuum or line plots
     # The line plots will tend to be larger, so we just want to
@@ -304,6 +304,7 @@ def make_all_quicklook_plots(flagging_sheet_link, folder="quicklook_imaging",
         fields_per_page = 3
 
     make_quicklook_html_links(flagging_sheet_link, output_folder, target_dict,
+                              summary_filenames,
                               fields_per_page=fields_per_page)
 
 

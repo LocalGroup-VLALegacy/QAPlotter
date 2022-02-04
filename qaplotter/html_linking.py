@@ -651,6 +651,7 @@ def make_content_caltables_div(cal_plot):
 # Functions for quicklook image figures:
 
 def make_quicklook_html_links(flagging_sheet_link, folder, target_dict,
+                              summary_filenames,
                               fields_per_page=5):
 
     # Number of pages to make
@@ -686,7 +687,8 @@ def make_quicklook_html_links(flagging_sheet_link, folder, target_dict,
     if index_file.exists():
         index_file.unlink()
 
-    print(make_index_quicklook_html_page(flagging_sheet_link, target_list_split),
+    print(make_index_quicklook_html_page(flagging_sheet_link, target_list_split,
+                                         summary_filenames),
           file=open(index_file, 'a'))
 
     # Loop through the fields
@@ -704,7 +706,7 @@ def make_quicklook_html_links(flagging_sheet_link, folder, target_dict,
               file=open(field_file, 'a'))
 
 
-def make_index_quicklook_html_page(flagging_sheet_link, target_list_split):
+def make_index_quicklook_html_page(flagging_sheet_link, target_list_split, summary_filenames):
 
     html_string = make_html_preamble()
 
@@ -722,6 +724,10 @@ def make_index_quicklook_html_page(flagging_sheet_link, target_list_split):
 
     # Add in MS info:
     html_string += '<div class="content" id="basic">\n'
+
+    # Include the summary plots
+    html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_filenames[0]}" height="1000" width="100%"></iframe>\n'
+    html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_filenames[1]}" height="1000" width="100%"></iframe>\n'
 
     html_string += '</div>\n\n'
 

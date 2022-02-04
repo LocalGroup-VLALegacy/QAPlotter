@@ -12,6 +12,7 @@ from pandas import DataFrame
 from spectral_cube import SpectralCube
 from spectral_cube.utils import StokesWarning
 
+
 def make_quicklook_figures(foldername, output_foldername, suffix='image'):
 
     if not os.path.exists(output_foldername):
@@ -45,13 +46,15 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
     else:
         fig_summ1, fig_summ2 = make_quicklook_continuum_noise_summary(data_dict)[:2]
 
-    out_html_name = f"quicklook-{type_tag}-summary-spw-plotly_interactive.html"
-    fig_summ1.write_html(f"{output_foldername}/{out_html_name}")
+    out_html_name1 = f"quicklook-{type_tag}-summary-spw-plotly_interactive.html"
+    fig_summ1.write_html(f"{output_foldername}/{out_html_name1}")
 
-    out_html_name = f"quicklook-{type_tag}-summary-field-plotly_interactive.html"
-    fig_summ2.write_html(f"{output_foldername}/{out_html_name}")
+    out_html_name2 = f"quicklook-{type_tag}-summary-field-plotly_interactive.html"
+    fig_summ2.write_html(f"{output_foldername}/{out_html_name2}")
 
-    return targetname_dict
+    summary_filenames = [out_html_name1, out_html_name2]
+
+    return targetname_dict, summary_filenames
 
 
 def load_quicklook_images(foldername, suffix='image'):
@@ -463,6 +466,8 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
 
     # return df
 
+    # px.colors.qualitative.Safe
+
     fig = px.line(df.sort_values(by='freq0'),
                   x='freq0', y='rms', line_group='name', error_x='delta_freq',
                   color='name',
@@ -473,6 +478,7 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
                           "rms": f"RMS ({flux_unit.to_string()})",
                           "name": "Field"},
                   category_orders={"name": df.sort_values(by="name")['name']},
+                  color_discrete_sequence=px.colors.qualitative.Safe,
                   markers=True)
 
 
@@ -491,6 +497,7 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
                           "name": "Field"},
                   category_orders={"spw": spw_order,
                                    "name": df.sort_values(by="name")['name']},
+                  color_discrete_sequence=px.colors.qualitative.Safe,
                   markers=True)
 
     return fig, fig2, df
