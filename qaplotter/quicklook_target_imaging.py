@@ -398,7 +398,7 @@ def make_quicklook_lines_figure(data_dict, target_name):
     return fig
 
 
-def make_quicklook_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
+def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
     '''
     Generate a noise summary per field per SPW to quickly identify
     outlier images.
@@ -426,7 +426,7 @@ def make_quicklook_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
                 continue
 
             try:
-                this_data = this_cube.with_fill_value(0.).unitless_filled_data[:]
+                this_data = this_cube.unitless_filled_data[:]
             except ValueError:
                 continue
 
@@ -438,7 +438,7 @@ def make_quicklook_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
             del this_cube
 
             # Estimate the noise. This is a ROUGH estimate only.
-            rms_approx = mad_std(sigma_clip(this_data[np.nonzero(this_data)], sigma=3.)) * data_unit
+            rms_approx = mad_std(sigma_clip(this_data[np.isfinite(this_data)], sigma=3.)) * data_unit
             rms_approx = rms_approx.to(flux_unit).value
 
             all_data_info.append([name, key.split("_")[0],
@@ -460,7 +460,7 @@ def make_quicklook_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
                           "spw": "SPW",
                           "rms": f"RMS ({flux_unit.to_string()})",
                           "name": "Field"},
-                          category_orders={"name": df.sort_values(by="name")['name']},
+                  category_orders={"name": df.sort_values(by="name")['name']},
                   markers=True)
 
 
@@ -478,6 +478,87 @@ def make_quicklook_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
                           "rms": f"RMS ({flux_unit.to_string()})",
                           "name": "Field"},
                   category_orders={"spw": spw_order,
+                                   "name": df.sort_values(by="name")['name']},
+                  markers=True)
+
+    return fig, fig2, df
+
+
+def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
+    '''
+    Generate a noise summary per field per SPW to quickly identify
+    outlier images.
+    '''
+
+    all_data_info = []
+
+    for name in all_data_dict:
+
+        data_dict = all_data_dict[name]
+
+        # Key are in form of SPW_i, where i is the ith line in that spw.
+        spw_keys = np.array(list(data_dict.keys()))
+
+        spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+
+        spw_keys_ordered = spw_keys[spw_order]
+
+
+        for key in spw_keys_ordered:
+
+            line_label = data_dict[key][0]
+
+            # Load the cube in.
+            this_cube = read_data(data_dict[key][1])
+            if this_cube is None:
+                continue
+
+            try:
+                this_data = this_cube.unitless_filled_data[:]
+            except ValueError:
+                continue
+
+            chan_width = np.round(np.abs(np.diff(this_cube.spectral_axis)[0]), 1)
+
+            data_unit = this_cube.unit
+
+            del this_cube
+
+            # Estimate the noise. This is a ROUGH estimate only.
+            rms_approx = mad_std(sigma_clip(this_data[np.isfinite(this_data)], sigma=3.)) * data_unit
+            rms_approx = rms_approx.to(flux_unit).value
+
+
+            all_data_info.append([name, key.split("_")[0],
+                                  rms_approx, flux_unit.to_string(),
+                                  chan_width.to(u.km / u.s).value,
+                                  line_label])
+
+    df = DataFrame(all_data_info,
+                   columns=['name', "spw", "rms", "rms_unit", 'chan_width', 'line_name'])
+
+    fig = px.line(df.sort_values(by='line_name'),
+                  x='line_name', y='rms', line_group='name',
+                  color='name',
+                  hover_data={'spw': True, 'chan_width': ":.2f"},
+                  labels={"spw": "SPW",
+                          "rms": f"RMS ({flux_unit.to_string()})",
+                          "name": "Field",
+                          "chan_width": "Channel (km/s)",
+                          "line_name": "Spectral Line"},
+                  category_orders={"name": df.sort_values(by="name")['name']},
+                  markers=True)
+
+    fig2 = px.line(df.sort_values(by='name'),
+                  x='name', y='rms', line_group='line_name',
+                  color='line_name',
+                  hover_data={'line_name': True, 'chan_width': ":.2f"},
+                  labels={"spw": "SPW",
+                          "rms": f"RMS ({flux_unit.to_string()})",
+                          "name": "Field",
+                          "chan_width": "Channel (km/s)",
+                          "line_name": "Spectral Line"},
+                  category_orders={"line_name": df.sort_values(by="line_name")['line_name'],
                                    "name": df.sort_values(by="name")['name']},
                   markers=True)
 
