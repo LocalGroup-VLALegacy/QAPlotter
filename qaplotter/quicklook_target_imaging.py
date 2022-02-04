@@ -40,7 +40,19 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
 
         targetname_dict[target] = out_html_name
 
+    if is_line:
+        fig_summ1, fig_summ2 = make_quicklook_lines_noise_summary(data_dict)[:2]
+    else:
+        fig_summ1, fig_summ2 = make_quicklook_continuum_noise_summary(data_dict)[:2]
+
+    out_html_name = f"quicklook-{type_tag}-summary-spw-plotly_interactive.html"
+    fig_summ1.write_html(f"{output_foldername}/{out_html_name}")
+
+    out_html_name = f"quicklook-{type_tag}-summary-field-plotly_interactive.html"
+    fig_summ2.write_html(f"{output_foldername}/{out_html_name}")
+
     return targetname_dict
+
 
 def load_quicklook_images(foldername, suffix='image'):
     '''
