@@ -566,6 +566,7 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
                           "chan_width": "Channel (km/s)",
                           "line_name": "Spectral Line"},
                   category_orders={"name": df.sort_values(by="name")['name']},
+                  color_discrete_sequence=px.colors.qualitative.Safe,
                   markers=True)
 
     fig2 = px.line(df.sort_values(by='name'),
@@ -579,6 +580,7 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
                           "line_name": "Spectral Line"},
                   category_orders={"line_name": df.sort_values(by="line_name")['line_name'],
                                    "name": df.sort_values(by="name")['name']},
+                  color_discrete_sequence=px.colors.qualitative.Safe,
                   markers=True)
 
     return fig, fig2, df
