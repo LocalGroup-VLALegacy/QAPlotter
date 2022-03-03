@@ -2,7 +2,7 @@
 Make interactive figures for QA of VLA data
 
 This package expects the name scheme and outputs created by the LGLBS
-`pipeline <https://github.com/LocalGroup-VLALegacy/ReductionPipeline>`).
+`pipeline <https://github.com/LocalGroup-VLALegacy/ReductionPipeline>`_).
 
 Install this package a python 3.8 environment using::
 
@@ -21,4 +21,5 @@ by the `hifv_exportdata` and do the following steps.
     >> import qaplotter
     >>> qaplotter.make_all_plots()
 
-Now open the "index.html" file to access the expanded weblog.
+The “index.html” file in the directory should embed the VLA pipeline weblog and
+have links along the tops to the additional plots.
