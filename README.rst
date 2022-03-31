@@ -14,12 +14,21 @@ from within the repo directory.
 To use this with the LGLBS pipeline products, enter the "products" folder created
 by the `hifv_exportdata` and do the following steps.
 
-1. Extract the `weblog.tgz` to a folder named "weblog". Note that by default the folder will be named from the pipeline run with a date and time.
+- Extract the `weblog.tgz` to a folder named "weblog". Note that by default the folder will be named from the
+  pipeline run with a date and time. Apart from manually renaming, you can extract the tar file to a new folder with::
 
-2. Run the following in an python environment (or run from the cmd line or in a script):
+    cd products/
+    mkdir weblog
+    tar --strip-components=1 -C weblog -xf weblog.tgz
 
-    >> import qaplotter
-    >>> qaplotter.make_all_plots()
+- Run the following in an python environment (or run from the cmd line or in a script)::
 
-The “index.html” file in the directory should embed the VLA pipeline weblog and
-have links along the tops to the additional plots.
+    (from cmd line) python -c "import qaplotter; qaplotter.make_all_plots()"
+
+    (from python interpreter)
+    import qaplotter
+    qaplotter.make_all_plots()
+
+Within the products folder, there should now be a new "index.html" file. This track homepage should
+have the pipeline weblog embedded and additional links along the top for the interactive plots and quicklook
+imaging.
