@@ -278,7 +278,7 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
             if key not in table_dict.keys():
                 raise KeyError(f"Required dict key {key} not found.")
 
-        spw_nums.extend(list(set(table_dict['amp_time']['spw'])))
+        spw_nums.extend(list(set(table_dict['amp_chan']['spw'])))
 
     spw_nums = list(set(spw_nums))
 
