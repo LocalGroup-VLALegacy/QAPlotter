@@ -1,6 +1,7 @@
 
 from glob import glob
 import os
+import warnings
 
 from astropy.table import table
 import numpy as np
@@ -125,19 +126,27 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
 
     if len(target_fields) > 0:
 
-        fig_summ_time = target_summary_amptime_figure(target_fields, folder,
-                                                      corrs=corrs,
-                                                      spw_dict=spw_dict,
-                                                      show_linesonly=show_target_linesonly)
-        out_html_name = f"target_amptime_summary_plotly_interactive.html"
-        fig_summ_time.write_html(f"{output_folder}/{out_html_name}")
+        try:
+            fig_summ_time = target_summary_amptime_figure(target_fields, folder,
+                                                        corrs=corrs,
+                                                        spw_dict=spw_dict,
+                                                        show_linesonly=show_target_linesonly)
+            out_html_name = f"target_amptime_summary_plotly_interactive.html"
+            fig_summ_time.write_html(f"{output_folder}/{out_html_name}")
+        except Exception as exc:
+            warnings.warn("Unable to make summary amp-time figure."
+                          f" Raise exception {exc}")
 
-        fig_summ_freq = target_summary_ampfreq_figure(target_fields, folder,
-                                                      corrs=corrs,
-                                                      spw_dict=spw_dict,
-                                                      show_linesonly=show_target_linesonly)
-        out_html_name = f"target_ampfreq_summary_plotly_interactive.html"
-        fig_summ_freq.write_html(f"{output_folder}/{out_html_name}")
+        try:
+            fig_summ_freq = target_summary_ampfreq_figure(target_fields, folder,
+                                                        corrs=corrs,
+                                                        spw_dict=spw_dict,
+                                                        show_linesonly=show_target_linesonly)
+            out_html_name = f"target_ampfreq_summary_plotly_interactive.html"
+            fig_summ_freq.write_html(f"{output_folder}/{out_html_name}")
+        except Exception as exc:
+            warnings.warn("Unable to make summary amp-freq figure."
+                          f" Raise exception {exc}")
 
     # Make the linking files into the same folder.
     make_all_html_links(flagging_sheet_link, output_folder, field_intents, meta_dict_0)
