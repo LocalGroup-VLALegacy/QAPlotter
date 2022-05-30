@@ -1,6 +1,7 @@
 
 import enum
 from glob import glob
+from multiprocessing.sharedctypes import Value
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
@@ -43,6 +44,9 @@ def target_summary_amptime_figure(fields, folder, show=False,
         spw_nums.extend(list(set(table_dict['amp_time']['spw'])))
 
     spw_nums = list(set(spw_nums))
+
+    if len(spw_nums) == 0:
+        raise ValueError("Unable to find any data in the amp vs. time tables.")
 
     # When requested, show lines only for mixed continuum/line data sets.
     # SPWs are defined by their name when the spw_dict is passed.
@@ -277,6 +281,9 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
         spw_nums.extend(list(set(table_dict['amp_time']['spw'])))
 
     spw_nums = list(set(spw_nums))
+
+    if len(spw_nums) == 0:
+        raise ValueError("Unable to find any data in the amp vs. freq tables.")
 
     # When requested, show lines only for mixed continuum/line data sets.
     # SPWs are defined by their name when the spw_dict is passed.
