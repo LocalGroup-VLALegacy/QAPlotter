@@ -16,7 +16,9 @@ from .utils import (read_field_data_tables,
                     read_phasegaincal_data_tables,
                     load_spwdict)
 
-from .parse_weblog import get_field_intents, extract_manual_flagging_log
+from .parse_weblog import (get_field_intents,
+                           extract_manual_flagging_log,
+                           extract_msname)
 
 from .field_plots import target_scan_figure, calibrator_scan_figure
 
@@ -356,27 +358,28 @@ def make_all_plots(msname=None,
 
     '''
 
-    # TODO: add a metadata reader. Most likely include this as a save file from the pipeline to be read in.
-    # This will eventually be used to contain more info about the track.
-    # For now, it's just the name. We default to the parent folder's name when none is given.
     ms_info_dict = {}
 
     if msname is None:
-        msname = os.path.abspath(".").split("/")[-1]
+        msname = extract_msname()
+
+        # except ValueError:
+        #     # This only follows the convention we're using for product names in LGLBS
+        #     # It is not general and when it does not match the expected format from the
+        #     # SDM name, some features will be missing in the QA products.
+        #     warnings.warn("Unable to extract MS name from the weblog. "
+        #                   "Assuming parent directory name for MS.")
+        #     msname = os.path.abspath(".").split("/")[-1]
 
     ms_info_dict['vis'] = msname
-
-    track_folder = msname
 
     # Try parsing the hifv_flagdata log to check for issues in our
     # manual flagging commands.
     try:
-        # Reduce name from TARGET_CONFIG_MSNAME_TYPE_products
-        orig_msname = ".".join(msname.split("_")[2:4]) + ".ms"
-        warn_tab = extract_manual_flagging_log(orig_msname)
+        warn_tab = extract_manual_flagging_log(msname)
         warn_tab.write(manualflag_tablename, overwrite=True)
-    except Exception as e:
-        pass
+    except Exception as exc:
+        warnings.warn(f"Encountered exception: {exc}")
 
     if os.path.exists(spwdict_filename):
         print(f"Found spw dictionary file.")
