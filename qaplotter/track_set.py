@@ -36,7 +36,7 @@ from .html_linking import (make_all_html_links, make_html_homepage,
                            make_quicklook_html_links)
 
 
-def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
+def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
                      flagging_sheet_link=None, corrs=['RR', 'LL'],
                      spw_dict=None, show_target_linesonly=True):
     '''
@@ -78,7 +78,7 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
         table_dict, meta_dict = read_field_data_tables(field, folder)
 
         try:
-            field_intent = get_field_intents(field, meta_dict['amp_chan']['vis'])
+            field_intent = get_field_intents(field, msname)
         except Exception as e:
             field_intent = ''
 
@@ -106,17 +106,14 @@ def make_field_plots(track_folder, folder, output_folder, save_fieldnames=False,
         fig.write_html(f"{output_folder}/{out_html_name}")
 
     # Create summary tables using all target fields
-    init_target = True
-
     target_fields = []
 
     for i, field in enumerate(fieldnames):
-    # for i, field in enumerate(fieldnames[:3]):
 
         table_dict, meta_dict = read_field_data_tables(field, folder)
 
         try:
-            field_intent = get_field_intents(field, meta_dict['amp_chan']['vis'])
+            field_intent = get_field_intents(field, msname)
         except Exception as e:
             field_intent = ''
 
@@ -391,9 +388,10 @@ def make_all_plots(msname=None,
     make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link,
                        manualflag_tablename=manualflag_tablename)
 
-    make_field_plots(flagging_sheet_link, folder_fields, output_folder_fields,
+    make_field_plots(ms_info_dict['vis'], folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames,
                      corrs=corrs, spw_dict=spw_dict,
+                     flagging_sheet_link=flagging_sheet_link,
                      show_target_linesonly=show_target_linesonly)
 
     # For older pipeline runs, only the BP txt files will be available.
