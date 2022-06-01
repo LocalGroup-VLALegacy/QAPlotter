@@ -3,12 +3,14 @@
 Functions to extract information from the pipeline HTML weblog.
 '''
 
+from multiprocessing.sharedctypes import Value
 from bs4 import BeautifulSoup
 import pandas as pd
 import re
 from astropy.table import Table
 import numpy as np
 import os
+import warnings
 
 
 def extract_source_table(msname, weblog_name='weblog'):
@@ -172,3 +174,29 @@ def extract_manual_flagging_log(msname, weblog_name='weblog'):
     tab = Table(warning_command_list, names=['Log error', 'Log comment', "Flagging command"])
 
     return tab
+
+
+def extract_msname(weblog_name='weblog'):
+    '''
+    Find the MS name in the weblog from the listing in
+    'weblog/html/sessionsession_1/'.
+    '''
+
+    try:
+        msnames = os.listdir(f"{weblog_name}/html/sessionsession_1")
+    except Exception as exc:
+        warnings.warn("Encountered exception {exc}")
+        return None
+
+    # NOTE: One weblog I pulled down had hidden files/folders. Check and remove these
+    # if present:
+    msnames = [val for val in msnames if not val.startswith(".") ]
+
+    if len(msnames) > 1:
+        raise ValueError(f"Found multiple names: {msnames}"
+                         " Cannot handle pipeline runs with multiple MSs.")
+
+    if len(msnames) == 0:
+        raise ValueError(f"Unable to find any folders in {weblog_name}/html/sessionsession_1")
+
+    return msnames[0]
