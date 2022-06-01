@@ -6,7 +6,7 @@ Function for embedding interactive plots and adding links, etc.
 from pathlib import Path
 import numpy as np
 
-from .utils import datetime_from_msname
+from .utils import datetime_from_msname, generate_obslog_link
 
 
 def return_webserver_link():
@@ -77,6 +77,10 @@ def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None,
     try:
         utc_datetime = datetime_from_msname(ms_info_dict["vis"])
         html_string += f'<p>UTC datetime: {utc_datetime.strftime("%Y/%m/%d/%H:%M")}</p>\n'
+
+        obslog_link = generate_obslog_link(ms_info_dict['vis'])
+        html_string += f'<a href="{obslog_link}">VLA Observer Log</a>\n'
+
     except (AssertionError, ValueError):
         pass
 
