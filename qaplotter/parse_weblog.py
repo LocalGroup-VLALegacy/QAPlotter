@@ -185,7 +185,7 @@ def extract_msname(weblog_name='weblog'):
     try:
         msnames = os.listdir(f"{weblog_name}/html/sessionsession_1")
     except Exception as exc:
-        warnings.warn("Encountered exception {exc}")
+        warnings.warn(f"Encountered exception {exc}")
         return None
 
     # NOTE: One weblog I pulled down had hidden files/folders. Check and remove these

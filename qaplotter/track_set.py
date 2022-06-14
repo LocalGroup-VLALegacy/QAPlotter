@@ -79,7 +79,8 @@ def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
 
         try:
             field_intent = get_field_intents(field, msname)
-        except Exception as e:
+        except Exception as exc:
+            warnings.warn(f"Unable to find field intent. Raise exception: {exc}")
             field_intent = ''
 
         meta_dict['intent'] = field_intent
@@ -114,7 +115,8 @@ def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
 
         try:
             field_intent = get_field_intents(field, msname)
-        except Exception as e:
+        except Exception as exc:
+            warnings.warn(f"Unable to find field intent. Raise exception: {exc}")
             field_intent = ''
 
         if "target" in field_intent.lower():
@@ -358,7 +360,12 @@ def make_all_plots(msname=None,
     ms_info_dict = {}
 
     if msname is None:
-        msname = extract_msname()
+        msname = extract_msname(weblog_name='weblog')
+
+    # If it's STILL None, raise an exception.
+    if msname is None:
+        raise Exception("Unable to identify the MS or SDM name from the weblog."
+                        " Please give the name using the 'msname' kwarg.")
 
         # except ValueError:
         #     # This only follows the convention we're using for product names in LGLBS
