@@ -66,13 +66,18 @@ def make_meta_dict(meta_lines):
         # Skip "# "
         line = line[2:]
 
-        name, value = line.split(":")
+        # Some plotms output will have multiple name:value pairs
+        num_names = len(line.split(":")) // 2
 
-        name = name.strip(" ")
-        value = value.strip(" ")
-        value = value.strip("\n")
+        for ii in range(num_names):
 
-        data_dict[name] = value
+            name, value = line.split(":")[2*ii:2*(ii)+2]
+
+            name = name.strip(" ")
+            value = value.strip(" ")
+            value = value.strip("\n")
+
+            data_dict[name] = value
 
     return data_dict
 
