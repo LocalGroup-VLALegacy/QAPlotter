@@ -10,7 +10,7 @@ import astropy.table as table
 
 from .utils import read_field_data_tables
 
-from .utils import vla_time_conversion
+from .utils import telescope_time_conversion
 
 # Define a common set of markers to plot for different correlations
 # e.g. RR, LL, RL, LR
@@ -21,7 +21,8 @@ def target_summary_amptime_figure(fields, folder, show=False,
                                   scatter_plot=go.Scattergl,
                                   corrs=['RR', 'LL'],
                                   spw_dict=None,
-                                  show_linesonly=False):
+                                  show_linesonly=False,
+                                  telescope='vla'):
     '''
     Make a N SPW-panel figure over all targets.
     '''
@@ -92,7 +93,7 @@ def target_summary_amptime_figure(fields, folder, show=False,
 
     def make_casa_timestring(x):
 
-        datetime_vals = vla_time_conversion(x)
+        datetime_vals = telescope_time_conversion(x, telescope=telescope)
 
         return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
                 for dtime in datetime_vals]
@@ -105,7 +106,7 @@ def target_summary_amptime_figure(fields, folder, show=False,
     # Time is always the x-axis.
     if "time" in key:
         def format_xvals(x):
-            datetime_vals = vla_time_conversion(x)
+            datetime_vals = telescope_time_conversion(x, telescope=telescope)
 
             return datetime_vals
     else:

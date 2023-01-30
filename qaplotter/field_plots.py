@@ -4,7 +4,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
 
-from .utils import vla_time_conversion
+from .utils import telescope_time_conversion
 
 # Define a common set of markers to plot for different correlations
 # e.g. RR, LL, RL, LR
@@ -15,7 +15,8 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                        scatter_plot=go.Scattergl,
                        corrs=['RR', 'LL'],
                        spw_dict=None,
-                       show_linesonly=False):
+                       show_linesonly=False,
+                       telescope='vla'):
     '''
     Make a 3-panel figure for target scans.
     '''
@@ -67,7 +68,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
     def make_casa_timestring(x):
 
-        datetime_vals = vla_time_conversion(x)
+        datetime_vals = telescope_time_conversion(x, telescope=telescope)
 
         return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
                 for dtime in datetime_vals]
@@ -84,7 +85,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
         # Time is always the x-axis.
         if "time" in key:
             def format_xvals(x):
-                datetime_vals = vla_time_conversion(x)
+                datetime_vals = telescope_time_conversion(x, telescope=telescope)
 
                 return datetime_vals
         else:
@@ -255,7 +256,8 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
 
 def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Scattergl,
-                           corrs=['RR', 'LL'], spw_dict=None):
+                           corrs=['RR', 'LL'], spw_dict=None,
+                           telescope='vla'):
     '''
     Make a 12-panel (4x3) figure for calibrator scans.
     '''
@@ -323,7 +325,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
     def make_casa_timestring(x):
 
-        datetime_vals = vla_time_conversion(x)
+        datetime_vals = telescope_time_conversion(x, telescope=telescope)
 
         return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
                 for dtime in datetime_vals]
@@ -342,7 +344,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
             # Time is always the x-axis.
             if "time" in key:
                 def format_xvals(x):
-                    datetime_vals = vla_time_conversion(x)
+                    datetime_vals = telescope_time_conversion(x, telescope=telescope)
 
                     return datetime_vals
             else:

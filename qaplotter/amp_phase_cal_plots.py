@@ -6,12 +6,13 @@ from plotly.subplots import make_subplots
 import numpy as np
 
 
-from .utils.time_conversion import make_casa_timestring, vla_time_conversion
+from .utils.time_conversion import make_casa_timestring, telescope_time_conversion
 
 
 def phase_gain_figures(table_dict, meta_dict,
                         nant_per_figure=8,
                         scatter_plot=go.Scattergl,
+                        telescope='vla',
                         ):
     '''
     Create an plot for each Antenna. Will create several figures based
@@ -138,7 +139,8 @@ def phase_gain_figures(table_dict, meta_dict,
                                                 tab_data['ant2name'][combined_mask].tolist(),
                                                 make_casa_timestring(tab_data['time'][combined_mask].tolist()))).T
 
-                        fig.append_trace(scatter_plot(x=vla_time_conversion(tab_data['time'][combined_mask].tolist()),
+                        fig.append_trace(scatter_plot(x=telescope_time_conversion(tab_data['time'][combined_mask].tolist(),
+                                                                                  telescope=telescope),
                                                     y=tab_data[exp_keys[key]['y']][combined_mask],
                                                     mode='lines+markers',
                                                     marker=dict(symbol=marker,
@@ -203,6 +205,7 @@ def phase_gain_figures(table_dict, meta_dict,
 def amp_gain_time_figures(table_dict, meta_dict,
                           nant_per_figure=8,
                           scatter_plot=go.Scattergl,
+                          telescope='vla',
                           ):
     '''
     Create a plot for each Antenna. Will create several figures based
@@ -336,7 +339,8 @@ def amp_gain_time_figures(table_dict, meta_dict,
                                                 tab_data['ant2name'][combined_mask].tolist(),
                                                 make_casa_timestring(tab_data['time'][combined_mask].tolist()))).T
 
-                        fig.append_trace(scatter_plot(x=vla_time_conversion(tab_data['time'][combined_mask].tolist()),
+                        fig.append_trace(scatter_plot(x=telescope_time_conversion(tab_data['time'][combined_mask].tolist(),
+                                                                                  telescope=telescope),
                                                     y=tab_data[exp_keys[key]['y']][combined_mask],
                                                     mode='lines+markers',
                                                     marker=dict(symbol=marker,

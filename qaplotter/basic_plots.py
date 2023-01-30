@@ -4,8 +4,6 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
 
-from .utils import vla_time_conversion
-
 
 def basic_scatter(tab, xvar='x', yvar='y', hover='ants',
                   colorvar='ant1', meta=None):
