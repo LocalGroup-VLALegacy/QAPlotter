@@ -4,18 +4,24 @@ from astropy.time import Time
 import astropy.units as u
 
 
-def vla_time_conversion(time_mjd, return_casa_string=True):
+def telescope_time_conversion(time_mjd,
+                              telescope='vla',
+                              return_casa_string=True):
     '''
     Convert MJD seconds outputted in CASA txt files into a human-readable
     format for flagging purposes.
     '''
 
-    # EK - Checked site + match up of scan times for
+    # EK - Checked VLA site + match up of scan times for
     # first 20A-346 track.
 
-    vla_loc = EarthLocation.of_site("vla")
+    # sma not in hardcoded sites in astropy v5.2
+    # Use MJD from JCMT which should be absolutely fine for most things.
+    if telescope == 'sma':
+        telescope = 'jcmt'
+    tele_loc = EarthLocation.of_site(telescope)
 
-    time = Time(time_mjd * u.second, format='mjd', location=vla_loc)
+    time = Time(time_mjd * u.second, format='mjd', location=tele_loc)
 
     if return_casa_string:
         # Replace spaces and - with / to match CASA
