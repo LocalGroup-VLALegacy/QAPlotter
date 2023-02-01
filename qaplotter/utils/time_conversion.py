@@ -40,9 +40,9 @@ def telescope_time_conversion(time_mjd,
     return time
 
 
-def make_casa_timestring(x):
+def make_casa_timestring(x, time_conversion_func):
 
-    datetime_vals = vla_time_conversion(x)
+    datetime_vals = time_conversion_func(x)
 
     return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
             for dtime in datetime_vals]

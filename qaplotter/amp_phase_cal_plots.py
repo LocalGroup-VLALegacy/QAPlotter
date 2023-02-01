@@ -137,7 +137,8 @@ def phase_gain_figures(table_dict, meta_dict,
                                                 tab_data['corr'][combined_mask].tolist(),
                                                 tab_data['ant1name'][combined_mask].tolist(),
                                                 tab_data['ant2name'][combined_mask].tolist(),
-                                                make_casa_timestring(tab_data['time'][combined_mask].tolist()))).T
+                                                make_casa_timestring(tab_data['time'][combined_mask].tolist(),
+                                                                     lambda x: telescope_time_conversion(x, telescope=telescope)))).T
 
                         fig.append_trace(scatter_plot(x=telescope_time_conversion(tab_data['time'][combined_mask].tolist(),
                                                                                   telescope=telescope),
@@ -337,7 +338,8 @@ def amp_gain_time_figures(table_dict, meta_dict,
                                                 tab_data['corr'][combined_mask].tolist(),
                                                 tab_data['ant1name'][combined_mask].tolist(),
                                                 tab_data['ant2name'][combined_mask].tolist(),
-                                                make_casa_timestring(tab_data['time'][combined_mask].tolist()))).T
+                                                make_casa_timestring(tab_data['time'][combined_mask].tolist(),
+                                                                     lambda x: telescope_time_conversion(x, telescope=telescope)))).T
 
                         fig.append_trace(scatter_plot(x=telescope_time_conversion(tab_data['time'][combined_mask].tolist(),
                                                                                   telescope=telescope),
