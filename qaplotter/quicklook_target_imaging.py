@@ -82,12 +82,12 @@ def load_quicklook_images(foldername, suffix='image'):
 
         target_cubenames = [cubename for cubename in all_cubenames if f'{target}-' in cubename]
 
-        spw_nums = [int(cubename.split('-')[2][3:]) for cubename in target_cubenames]
+        # spw_nums = [int(cubename.split('-')[2][3:]) for cubename in target_cubenames]
+        spw_nums = [cubename.split('-')[2][3:] for cubename in target_cubenames]
         line_names = [cubename.split('-')[3] for cubename in target_cubenames]
 
         # SPWs aren't unique b/c we have the 1665 and 1667 lines in the same SPW.
         # So we'll label with strings and iterate through multiples for keys.
-
 
         for ii, (spw, line, cubename) in enumerate(zip(spw_nums, line_names, target_cubenames)):
             # NOTE: this is OK because the continuum images still have 3 dimensions.
@@ -148,7 +148,8 @@ def make_quicklook_continuum_figure(data_dict, target_name):
     # Key are in form of SPW_i, where i is the ith line in that spw.
     spw_keys = np.array(list(data_dict.keys()))
 
-    spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+    # spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+    spw_order = np.argsort([key.split("_")[0] for key in spw_keys])
 
     spw_keys_ordered = spw_keys[spw_order]
 
@@ -428,7 +429,8 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
         # Key are in form of SPW_i, where i is the ith line in that spw.
         spw_keys = np.array(list(data_dict.keys()))
 
-        spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+        # spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+        spw_order = np.argsort([key.split("_")[0] for key in spw_keys])
 
         spw_keys_ordered = spw_keys[spw_order]
 
@@ -482,7 +484,8 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
                   markers=True)
 
 
-    spw_order = np.unique(df['spw']).astype("int")
+    # spw_order = np.unique(df['spw']).astype("int")
+    spw_order = np.unique(df['spw'])
     spw_order.sort()
     spw_order = [str(val) for val in spw_order]
 
@@ -518,7 +521,8 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
         # Key are in form of SPW_i, where i is the ith line in that spw.
         spw_keys = np.array(list(data_dict.keys()))
 
-        spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+        # spw_order = np.argsort([int(key.split("_")[0]) for key in spw_keys])
+        spw_order = np.argsort([key.split("_")[0] for key in spw_keys])
 
         spw_keys_ordered = spw_keys[spw_order]
 

@@ -2,7 +2,8 @@
 Make interactive figures for QA of VLA data
 
 This package expects the name scheme and outputs created by the LGLBS
-`pipeline <https://github.com/LocalGroup-VLALegacy/ReductionPipeline>`_).
+`pipeline <https://github.com/LocalGroup-VLALegacy/ReductionPipeline>`_). For an example of the additional
+products needed for QAPlotter to work, see `this script <>`_.
 
 Install this package a python 3.8 environment using::
 
