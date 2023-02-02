@@ -92,6 +92,20 @@ def target_scan_figure(table_dict, meta_dict, show=False,
             def format_xvals(x):
                 return x
 
+        # Make channel strings that can account for channel averaging used in the plotms output:
+        chan_avg = int(meta_dict[key]['channel average'])
+        # No averaging = do nothing
+        if chan_avg == 1:
+            def make_channel_string(x):
+                return x
+        else:
+            def make_channel_string(x):
+                '''
+                Output a string with the channel range in the average
+                '''
+                return [f"{chan_avg * val}~{chan_avg * (val+1) - 1}" for val in x]
+
+
         tab_data = table_dict[key]
 
         # Check if the table is empty
@@ -112,7 +126,7 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
                 custom_data = np.vstack((tab_data['scan'][spw_mask & corr_mask].tolist(),
                                          tab_data['spw'][spw_mask & corr_mask].tolist(),
-                                         tab_data['chan'][spw_mask & corr_mask].tolist(),
+                                         make_channel_string(tab_data['chan'][spw_mask & corr_mask].tolist()),
                                          tab_data['freq'][spw_mask & corr_mask].tolist(),
                                          tab_data['corr'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant1name'][spw_mask & corr_mask].tolist(),
@@ -351,6 +365,20 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
                 def format_xvals(x):
                     return x
 
+            # Make channel strings that can account for channel averaging used in the plotms output:
+            chan_avg = int(meta_dict[key]['channel average'])
+            # No averaging = do nothing
+            if chan_avg == 1:
+                def make_channel_string(x):
+                    return x
+            else:
+                def make_channel_string(x):
+                    '''
+                    Output a string with the channel range in the average
+                    '''
+                    return [f"{chan_avg * val}~{chan_avg * (val+1) - 1}" for val in x]
+
+
             tab_data = table_dict[key]
 
             spw_mask = tab_data['spw'] == spw
@@ -364,7 +392,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
                 custom_data = np.vstack((tab_data['scan'][spw_mask & corr_mask].tolist(),
                                          tab_data['spw'][spw_mask & corr_mask].tolist(),
-                                         tab_data['chan'][spw_mask & corr_mask].tolist(),
+                                         make_channel_string(tab_data['chan'][spw_mask & corr_mask].tolist()),
                                          tab_data['freq'][spw_mask & corr_mask].tolist(),
                                          tab_data['corr'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant1name'][spw_mask & corr_mask].tolist(),
