@@ -69,6 +69,7 @@ def datetime_from_msname(msname):
 
     # This is in days and `vla_time_conversion` expects seconds.
 
-    utc_datetime = vla_time_conversion((mjd_date * u.day).to(u.s).value)
+    utc_datetime = telescope_time_conversion((mjd_date * u.day).to(u.s).value,
+                                             telescope='vla')
 
     return utc_datetime
