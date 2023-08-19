@@ -42,9 +42,11 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
         targetname_dict[target] = out_html_name
 
     if is_line:
-        fig_summ1, fig_summ2 = make_quicklook_lines_noise_summary(data_dict)[:2]
+        fig_summ1, fig_summ2, df, df_outliers = \
+            make_quicklook_lines_noise_summary(data_dict)
     else:
-        fig_summ1, fig_summ2 = make_quicklook_continuum_noise_summary(data_dict)[:2]
+        fig_summ1, fig_summ2, df, df_outliers = \
+            make_quicklook_continuum_noise_summary(data_dict)
 
     out_html_name1 = f"quicklook-{type_tag}-summary-spw-plotly_interactive.html"
     fig_summ1.write_html(f"{output_foldername}/{out_html_name1}")
@@ -52,7 +54,13 @@ def make_quicklook_figures(foldername, output_foldername, suffix='image'):
     out_html_name2 = f"quicklook-{type_tag}-summary-field-plotly_interactive.html"
     fig_summ2.write_html(f"{output_foldername}/{out_html_name2}")
 
-    summary_filenames = [out_html_name1, out_html_name2]
+    out_html_outliername1 = f"quicklook-{type_tag}-summary-outliers.html"
+    with open(f"{output_foldername}/{out_html_outliername1}", 'w') as fo:
+        df_outliers.to_html(fo)
+
+    summary_filenames = [out_html_outliername1,
+                         out_html_name1,
+                         out_html_name2]
 
     return targetname_dict, summary_filenames
 
@@ -593,7 +601,8 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
     return fig, fig2, df, df_outliers
 
 
-def make_outlier_field_summary(df, zscore_limit=3.):
+def make_outlier_field_summary(df, zscore_limit_field=3.,
+                               zscore_limit_spw=10.):
     '''
     Identify fields with outliers in noise to identify
     fields to take a closer look at.
@@ -612,7 +621,7 @@ def make_outlier_field_summary(df, zscore_limit=3.):
 
         zscore_rms = (these_rms - these_rms.median()) / these_rms.std()
 
-        is_outlier = zscore_rms >= zscore_limit
+        is_outlier = zscore_rms >= zscore_limit_field
 
         is_outlier_index = is_outlier[is_outlier].index
 
@@ -620,8 +629,26 @@ def make_outlier_field_summary(df, zscore_limit=3.):
         if is_outlier_index.size == 0:
             continue
 
-        # Otherwise append the name + SPW.
-        # field_outliers.append(df.iloc[is_outlier_index].T)
         df_outliers = pd.concat([df_outliers, df.iloc[is_outlier_index]])
 
-    return df_outliers
+    # Append outliers across SPW
+
+    for this_spw in df['spw'].unique():
+
+        df_this_spw = df[df['spw'] == this_spw]
+
+        these_rms = df_this_spw['rms'][df_this_spw['rms']!=0]
+
+        zscore_rms = (these_rms - these_rms.median()) / these_rms.std()
+
+        is_outlier = zscore_rms >= zscore_limit_spw
+
+        is_outlier_index = is_outlier[is_outlier].index
+
+        # No outliers
+        if is_outlier_index.size == 0:
+            continue
+
+        df_outliers = pd.concat([df_outliers, df.iloc[is_outlier_index]])
+
+    return df_outliers.drop_duplicates()
