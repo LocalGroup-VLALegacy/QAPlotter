@@ -466,9 +466,8 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
     df = DataFrame(all_data_info,
                    columns=['name', "spw", "rms", "rms_unit", 'freq0', 'delta_freq'])
 
-    # return df
-
-    # px.colors.qualitative.Safe
+    df_outliers = make_outlier_field_summary(df,
+                                             zscore_limit=3.)
 
     fig = px.line(df.sort_values(by='freq0'),
                   x='freq0', y='rms', line_group='name', error_x='delta_freq',
@@ -503,7 +502,7 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
                   color_discrete_sequence=px.colors.qualitative.Safe,
                   markers=True)
 
-    return fig, fig2, df
+    return fig, fig2, df, df_outliers
 
 
 def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
@@ -560,6 +559,10 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
     df = DataFrame(all_data_info,
                    columns=['name', "spw", "rms", "rms_unit", 'chan_width', 'line_name'])
 
+    # Try to identify clear outliers
+    df_outliers = make_outlier_field_summary(df,
+                                             zscore_limit=3.)
+
     fig = px.line(df.sort_values(by='line_name'),
                   x='line_name', y='rms', line_group='name',
                   color='name',
@@ -587,5 +590,38 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
                   color_discrete_sequence=px.colors.qualitative.Safe,
                   markers=True)
 
-    return fig, fig2, df
+    return fig, fig2, df, df_outliers
 
+
+def make_outlier_field_summary(df, zscore_limit=3.):
+    '''
+    Identify fields with outliers in noise to identify
+    fields to take a closer look at.
+
+
+    '''
+    import pandas as pd
+
+    df_outliers = DataFrame()
+
+    for this_field in df['name'].unique():
+
+        df_this_field = df[df['name'] == this_field]
+
+        these_rms = df_this_field['rms'][df_this_field['rms']!=0]
+
+        zscore_rms = (these_rms - these_rms.median()) / these_rms.std()
+
+        is_outlier = zscore_rms >= zscore_limit
+
+        is_outlier_index = is_outlier[is_outlier].index
+
+        # No outliers
+        if is_outlier_index.size == 0:
+            continue
+
+        # Otherwise append the name + SPW.
+        # field_outliers.append(df.iloc[is_outlier_index].T)
+        df_outliers = pd.concat([df_outliers, df.iloc[is_outlier_index]])
+
+    return df_outliers
