@@ -177,7 +177,9 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
     data_array = []
     data_info = {}
+    data_info_dynrange = {}
     valid_data = {}
+
     for key in spw_keys_ordered:
 
         # Load the cube in.
@@ -429,6 +431,7 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
     '''
 
     all_data_info = []
+    all_data_info_dr = []
 
     for name in all_data_dict:
 
@@ -466,16 +469,27 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
             rms_approx = mad_std(sigma_clip(this_data[np.isfinite(this_data)], sigma=3.)) * data_unit
             rms_approx = rms_approx.to(flux_unit).value
 
+            peak_flux = np.nanmax(this_data) * data_unit
+            peak_flux = peak_flux.to(flux_unit).value
+
+            dr_estimate= peak_flux / rms_approx
+
             all_data_info.append([name, key.split("_")[0],
-                                  rms_approx, flux_unit.to_string(),
+                                  np.round(rms_approx, 4),
+                                  np.round(peak_flux, 3),
+                                  np.round(dr_estimate, 1),
+                                  flux_unit.to_string(),
                                   freq0.value,
                                   del_freq.value])
 
+
     df = DataFrame(all_data_info,
-                   columns=['name', "spw", "rms", "rms_unit", 'freq0', 'delta_freq'])
+                   columns=['name', "spw", "rms", 'peak', 'dr',
+                            "rms_unit", 'freq0', 'delta_freq'])
 
     df_outliers = make_outlier_field_summary(df,
-                                             zscore_limit=3.)
+                                             ntimes_rms_field_limit=2.,
+                                             ntimes_rms_spw_limit=2.5)
 
     fig = px.line(df.sort_values(by='freq0'),
                   x='freq0', y='rms', line_group='name', error_x='delta_freq',
@@ -485,6 +499,8 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
                           "delta_freq": "Bandwidth (GHz)",
                           "spw": "SPW",
                           "rms": f"RMS ({flux_unit.to_string()})",
+                          "peak": f"Peak ({flux_unit.to_string()})",
+                          "dr": "DR",
                           "name": "Field"},
                   category_orders={"name": df.sort_values(by="name")['name']},
                   color_discrete_sequence=px.colors.qualitative.Safe,
@@ -504,6 +520,8 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
                           "delta_freq": "Bandwidth (GHz)",
                           "spw": "SPW",
                           "rms": f"RMS ({flux_unit.to_string()})",
+                          "peak": f"Peak ({flux_unit.to_string()})",
+                          "dr": "DR",
                           "name": "Field"},
                   category_orders={"spw": spw_order,
                                    "name": df.sort_values(by="name")['name']},
@@ -558,18 +576,29 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
             rms_approx = mad_std(sigma_clip(this_data[np.isfinite(this_data)], sigma=3.)) * data_unit
             rms_approx = rms_approx.to(flux_unit).value
 
+            peak_flux = np.nanmax(this_data) * data_unit
+            peak_flux = peak_flux.to(flux_unit).value
+
+            dr_estimate= peak_flux / rms_approx
 
             all_data_info.append([name, key.split("_")[0],
-                                  rms_approx, flux_unit.to_string(),
+                                  np.round(rms_approx, 4),
+                                  np.round(peak_flux, 3),
+                                  np.round(dr_estimate, 1),
+                                  flux_unit.to_string(),
                                   chan_width.to(u.km / u.s).value,
                                   line_label])
 
     df = DataFrame(all_data_info,
-                   columns=['name', "spw", "rms", "rms_unit", 'chan_width', 'line_name'])
+                   columns=['name', "spw",
+                            "rms", 'peak', 'dr',
+                            "rms_unit",
+                            'chan_width', 'line_name'])
 
     # Try to identify clear outliers
     df_outliers = make_outlier_field_summary(df,
-                                             zscore_limit=3.)
+                                             ntimes_rms_field_limit=2.,
+                                             ntimes_rms_spw_limit=2.5)
 
     fig = px.line(df.sort_values(by='line_name'),
                   x='line_name', y='rms', line_group='name',
@@ -577,6 +606,8 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
                   hover_data={'spw': True, 'chan_width': ":.2f"},
                   labels={"spw": "SPW",
                           "rms": f"RMS ({flux_unit.to_string()})",
+                          "peak": f"Peak ({flux_unit.to_string()})",
+                          "dr": "DR",
                           "name": "Field",
                           "chan_width": "Channel (km/s)",
                           "line_name": "Spectral Line"},
@@ -590,6 +621,8 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
                   hover_data={'line_name': True, 'chan_width': ":.2f"},
                   labels={"spw": "SPW",
                           "rms": f"RMS ({flux_unit.to_string()})",
+                          "peak": f"Peak ({flux_unit.to_string()})",
+                          "dr": "DR",
                           "name": "Field",
                           "chan_width": "Channel (km/s)",
                           "line_name": "Spectral Line"},
@@ -601,8 +634,9 @@ def make_quicklook_lines_noise_summary(all_data_dict, flux_unit=u.mJy / u.beam):
     return fig, fig2, df, df_outliers
 
 
-def make_outlier_field_summary(df, zscore_limit_field=3.,
-                               zscore_limit_spw=10.):
+def make_outlier_field_summary(df,
+                               ntimes_rms_field_limit=2.,
+                               ntimes_rms_spw_limit=2.5):
     '''
     Identify fields with outliers in noise to identify
     fields to take a closer look at.
@@ -617,11 +651,12 @@ def make_outlier_field_summary(df, zscore_limit_field=3.,
 
         df_this_field = df[df['name'] == this_field]
 
-        these_rms = df_this_field['rms'][df_this_field['rms']!=0]
+        these_rms = df_this_field['rms'][df_this_field['rms'] != 0]
 
-        zscore_rms = (these_rms - these_rms.median()) / these_rms.std()
+        # x higher than lowest noise
+        ntimes_rms = these_rms / these_rms.min()
 
-        is_outlier = zscore_rms >= zscore_limit_field
+        is_outlier = ntimes_rms >= ntimes_rms_field_limit
 
         is_outlier_index = is_outlier[is_outlier].index
 
@@ -639,10 +674,9 @@ def make_outlier_field_summary(df, zscore_limit_field=3.,
 
         these_rms = df_this_spw['rms'][df_this_spw['rms']!=0]
 
-        zscore_rms = (these_rms - these_rms.median()) / these_rms.std()
+        ntimes_rms = these_rms / these_rms.median()
 
-        is_outlier = zscore_rms >= zscore_limit_spw
-
+        is_outlier = ntimes_rms >= ntimes_rms_spw_limit
         is_outlier_index = is_outlier[is_outlier].index
 
         # No outliers
@@ -651,4 +685,4 @@ def make_outlier_field_summary(df, zscore_limit_field=3.,
 
         df_outliers = pd.concat([df_outliers, df.iloc[is_outlier_index]])
 
-    return df_outliers.drop_duplicates()
+    return df_outliers.drop_duplicates().sort_values('name')
