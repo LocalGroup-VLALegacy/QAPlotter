@@ -729,9 +729,13 @@ def make_index_quicklook_html_page(flagging_sheet_link, target_list_split, summa
     # Add in MS info:
     html_string += '<div class="content" id="basic">\n'
 
+    html_string += f'   <h2>Field/SPW Outliers</h2>\n'
+
     # Include the summary plots
-    html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_filenames[0]}" height="1000" width="100%"></iframe>\n'
+    html_string += f'    <iframe id="igraph" scrolling="no" style="border:none;" seamless="seamless" src="{summary_filenames[0]}" height="800" width="100%"></iframe>\n'
+
     html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_filenames[1]}" height="1000" width="100%"></iframe>\n'
+    html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_filenames[2]}" height="1000" width="100%"></iframe>\n'
 
     html_string += '</div>\n\n'
 
