@@ -488,8 +488,8 @@ def make_quicklook_continuum_noise_summary(all_data_dict, flux_unit=u.mJy / u.be
                             "rms_unit", 'freq0', 'delta_freq'])
 
     df_outliers = make_outlier_field_summary(df,
-                                             ntimes_rms_field_limit=2.,
-                                             ntimes_rms_spw_limit=2.5)
+                                             ntimes_rms_field_limit=8.,
+                                             ntimes_rms_spw_limit=8.)
 
     fig = px.line(df.sort_values(by='freq0'),
                   x='freq0', y='rms', line_group='name', error_x='delta_freq',
