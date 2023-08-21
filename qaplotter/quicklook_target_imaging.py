@@ -685,4 +685,7 @@ def make_outlier_field_summary(df,
 
         df_outliers = pd.concat([df_outliers, df.iloc[is_outlier_index]])
 
-    return df_outliers.drop_duplicates().sort_values('name')
+    if df_outliers.empty:
+        return df_outliers
+    else:
+        return df_outliers.drop_duplicates().sort_values('name')
