@@ -19,10 +19,14 @@ def read_casa_txt(filename):
     # One for column names, another for units.
     data_start = len(meta_lines) + 3
 
-    tab = Table.read(filename,
-                     format='ascii.commented_header',
-                     header_start=header_start,
-                     data_start=data_start)
+    try:
+        tab = Table.read(filename,
+                        format='ascii.commented_header',
+                        header_start=header_start,
+                        data_start=data_start)
+    except Exception as e:
+        print(f"Failured reading {tabname} with exception {e}.")
+        tab = Table()
 
     return tab, meta_dict
 
