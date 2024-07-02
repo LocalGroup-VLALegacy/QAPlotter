@@ -1,5 +1,5 @@
 
-from astropy.table import Table
+from astropy.table import Table, vstack
 import os
 from glob import glob
 import numpy as np
@@ -82,7 +82,7 @@ def make_meta_dict(meta_lines):
     return data_dict
 
 
-def read_field_data_tables(fieldname, inp_path):
+def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
     '''
     Read in a set of tables for a given `fieldname`. Note that this depends on the function:
     https://github.com/e-koch/ReductionPipeline/blob/master/lband_pipeline/qa_plotting/qa_plot_tools.py#L311.
@@ -106,6 +106,33 @@ def read_field_data_tables(fieldname, inp_path):
 
             table_dict[tab_type] = out[0]
             meta_dict[tab_type] = out[1]
+
+        else:
+            # Recent change to output txt tables per scan to reduce the memory footprint
+            # when calling plotms
+            if try_per_scan:
+                tabnames = list(glob(osjoin(inp_path, f"field_{fieldname}_{tab_type}.scan_*.txt")))
+
+                if len(tabnames) == 0:
+                    print(f"Could not find {tabname} per scans. Skipping.")
+                    continue
+
+                # Loop through and stack the tables
+                scan_tables = []
+                for tabname in tabnames:
+                    out = read_casa_txt(tabname)
+
+                    scan_tables.append(out[0])
+
+                table_dict[tab_type] = vstack(scan_tables)
+
+                # Grab the last meta-data dict. These shouldn't change across scans
+                # for the values we use for the plots.
+                meta_dict[tab_type] = out[1]
+
+            else:
+                if not try_per_scan:
+                    print(f"Could not find {tabname}. Skipping.")
 
     return table_dict, meta_dict
 
