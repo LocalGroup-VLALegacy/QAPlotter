@@ -103,6 +103,8 @@ def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
     # Target fields will not have the phase tables.
     # Cal fields should have all
 
+    print(f" On field {fieldname}.")
+
     for tab_type in tab_types:
         tabname = osjoin(inp_path, f"field_{fieldname}_{tab_type}.txt")
         if os.path.exists(tabname):
@@ -124,9 +126,17 @@ def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
                 # Loop through and stack the tables
                 scan_tables = []
                 for tabname in tabnames:
+                    # Skip empty tables
+                    if os.path.getsize(tabname) < 1000:
+                        continue
+
                     out = read_casa_txt(tabname)
 
                     scan_tables.append(out[0])
+
+                if len(scan_tables) == 0:
+                    print(f"Could not find {tabname} per scans. Skipping.")
+                    continue
 
                 table_dict[tab_type] = vstack(scan_tables)
 
