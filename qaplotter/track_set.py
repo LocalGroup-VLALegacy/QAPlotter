@@ -51,6 +51,8 @@ def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
         os.mkdir(output_folder)
 
     def get_fieldname(filename):
+        if "scan_" in filename:
+            return "_".join(os.path.basename(filename).split("_")[1:-3])
         return "_".join(os.path.basename(filename).split("_")[1:-2])
 
     fieldnames = [get_fieldname(filename) for filename in txt_files]
