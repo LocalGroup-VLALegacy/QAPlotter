@@ -378,6 +378,16 @@ def make_all_plots(msname=None,
         #                   "Assuming parent directory name for MS.")
         #     msname = os.path.abspath(".").split("/")[-1]
 
+    # Check if all product folders exist. If not, raise an exception.
+    if not os.path.exists(folder_fields):
+        raise Exception(f"Folder {folder_fields} does not exist.")
+
+    if not os.path.exists(folder_cals):
+        raise Exception(f"Folder {folder_cals} does not exist.")
+
+    if not os.path.exists(folder_qlimg):
+        raise Exception(f"Folder {folder_qlimg} does not exist.")
+
     ms_info_dict['vis'] = msname
 
     # Try parsing the hifv_flagdata log to check for issues in our
