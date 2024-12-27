@@ -408,6 +408,18 @@ def make_all_plots(msname=None,
     make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link,
                        manualflag_tablename=manualflag_tablename)
 
+    # Turn off show_target_linesonly for continuum-only cases
+    if show_target_linesonly:
+        is_continuum_spw = []
+        if spw_dict is not None:
+            for key in spw_dict:
+                # Filter out the continuum SPWs
+                is_continuum_spw.append(spw_dict[key]['label'])
+
+        if np.all(is_continuum_spw):
+            show_target_linesonly = False
+            print("Continuum-only SPWs detected. Disabling show_target_linesonly.")
+
     make_field_plots(ms_info_dict['vis'], folder_fields, output_folder_fields,
                      save_fieldnames=save_fieldnames,
                      corrs=corrs, spw_dict=spw_dict,
