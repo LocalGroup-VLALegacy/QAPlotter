@@ -414,7 +414,7 @@ def make_all_plots(msname=None,
         if spw_dict is not None:
             for key in spw_dict:
                 # Filter out the continuum SPWs
-                is_continuum_spw.append(spw_dict[key]['label'])
+                is_continuum_spw.append("continuum" in spw_dict[key]['label'])
 
         if np.all(is_continuum_spw):
             show_target_linesonly = False
