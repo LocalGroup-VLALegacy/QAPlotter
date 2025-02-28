@@ -83,6 +83,11 @@ def make_meta_dict(meta_lines):
 
             data_dict[name] = value
 
+    # CASA 6.6 uses 'file' instead of 'vis'.
+    if 'file' in data_dict:
+        data_dict['vis'] = data_dict['file']
+        del data_dict['file']
+
     return data_dict
 
 
@@ -138,7 +143,13 @@ def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
                     print(f"Could not find {tabname} per scans. Skipping.")
                     continue
 
-                table_dict[tab_type] = vstack(scan_tables)
+                comb_table = vstack(scan_tables)
+
+                # CASA v6.6 is outputting a "poln" column name; previous versions used 'corr'
+                if 'poln' in comb_table.colnames:
+                    comb_table.rename_column('poln', 'corr')
+
+                table_dict[tab_type] = comb_table
 
                 # Grab the last meta-data dict. These shouldn't change across scans
                 # for the values we use for the plots.
