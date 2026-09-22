@@ -94,10 +94,16 @@ def _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs, spw_labels,
     '''
     Shared trace-adding loop used by both `target_scan_figure` and
     `calibrator_scan_figure`. Returns the colors_dict used to populate
-    the SPW/Scan/Corr colour-toggle buttons.
+    the SPW/Scan/Corr/Ant1/Ant2 colour-toggle buttons.
     '''
 
-    colors_dict = {"SPW": [], "Scan": [], "Corr": []}
+    colors_dict = {"SPW": [], "Scan": [], "Corr": [], "Ant1": [], "Ant2": []}
+
+    # Neutral placeholder for panels with no baseline info at all (shapes
+    # A/B: amp_time/amp_chan/phase_time/phase_chan average over baseline),
+    # matching how the old plotms native export's placeholder ant1name='*'
+    # value would have collapsed to a single colour group there too.
+    placeholder_color = '#888888'
 
     for nn, key in enumerate(exp_keys):
 
@@ -147,6 +153,16 @@ def _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs, spw_labels,
                 colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
                                             for _ in range(n_points)])
 
+                for ant_label in ('ant1name', 'ant2name'):
+                    color_key = 'Ant1' if ant_label == 'ant1name' else 'Ant2'
+                    if ant_label in tab_data.colnames:
+                        ant_data = tab_data[ant_label][full_mask].tolist()
+                        ant_map_dict = {ant: n_uniq for n_uniq, ant in enumerate(np.unique(ant_data))}
+                        colors_dict[color_key].append([px.colors.qualitative.Safe[ant_map_dict[ant] % 11]
+                                                       for ant in ant_data])
+                    else:
+                        colors_dict[color_key].append([placeholder_color for _ in range(n_points)])
+
                 spw_str = f"SPW {spw}"
                 if spw in spw_labels:
                     spw_str += f"<br>({spw_labels[spw]})"
@@ -172,7 +188,7 @@ def _add_color_buttons(fig, colors_dict):
 
     buttons = [dict(label=label, method='update',
                     args=[{'marker.color': list(colors_dict[label])}])
-              for label in ('SPW', 'Scan', 'Corr')]
+              for label in ('SPW', 'Scan', 'Corr', 'Ant1', 'Ant2')]
 
     updatemenus = go.layout.Updatemenu(type='buttons', direction='left',
                                        showactive=True, x=1.01, xanchor="right",
@@ -303,7 +319,7 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
     colors_dict = _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs,
                                    spw_labels, lambda key: grid_positions[key], telescope,
-                                   first_trace_flag=lambda nn, nspw, nc: (nspw == 0 and nn == 0 and nc == 0))
+                                   first_trace_flag=lambda nn, nspw, nc: (nn == 0 and nc == 0))
 
     for key in exp_keys:
         if "time" not in key:
