@@ -106,11 +106,16 @@ def phase_gain_figures(table_dict, meta_dict,
 
                 tab_data = table_dict[key][ant_num]
 
-                corrs = np.unique(tab_data['corr'].tolist())
+                if 'corr' in tab_data.keys():
+                    corr_name = 'corr'
+                else:
+                    corr_name = 'poln'
+
+                corrs = np.unique(tab_data[corr_name].tolist())
 
                 for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                    corr_mask = (tab_data['corr'] == corr).tolist()
+                    corr_mask = (tab_data[corr_name] == corr).tolist()
 
                     # Colour by SPW
                     spw_data = tab_data['spw'][corr_mask].tolist()
@@ -134,7 +139,7 @@ def phase_gain_figures(table_dict, meta_dict,
                                                 tab_data['spw'][combined_mask].tolist(),
                                                 tab_data['chan'][combined_mask].tolist(),
                                                 tab_data['freq'][combined_mask].tolist(),
-                                                tab_data['corr'][combined_mask].tolist(),
+                                                tab_data[corr_name][combined_mask].tolist(),
                                                 tab_data['ant1name'][combined_mask].tolist(),
                                                 tab_data['ant2name'][combined_mask].tolist(),
                                                 make_casa_timestring(tab_data['time'][combined_mask].tolist(),
@@ -307,11 +312,16 @@ def amp_gain_time_figures(table_dict, meta_dict,
 
                 tab_data = table_dict[key][ant_num]
 
-                corrs = np.unique(tab_data['corr'].tolist())
+                if 'corr' in tab_data.keys():
+                    corr_name = 'corr'
+                else:
+                    corr_name = 'poln'
+
+                corrs = np.unique(tab_data[corr_name].tolist())
 
                 for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                    corr_mask = (tab_data['corr'] == corr).tolist()
+                    corr_mask = (tab_data[corr_name] == corr).tolist()
 
                     # Colour by Ant 1
                     spw_data = tab_data['spw'][corr_mask].tolist()
@@ -335,7 +345,7 @@ def amp_gain_time_figures(table_dict, meta_dict,
                                                 tab_data['spw'][combined_mask].tolist(),
                                                 tab_data['chan'][combined_mask].tolist(),
                                                 tab_data['freq'][combined_mask].tolist(),
-                                                tab_data['corr'][combined_mask].tolist(),
+                                                tab_data[corr_name][combined_mask].tolist(),
                                                 tab_data['ant1name'][combined_mask].tolist(),
                                                 tab_data['ant2name'][combined_mask].tolist(),
                                                 make_casa_timestring(tab_data['time'][combined_mask].tolist(),
@@ -510,11 +520,16 @@ def delay_freq_figures(table_dict, meta_dict,
 
                 tab_data = table_dict[key][ant_num]
 
-                corrs = np.unique(tab_data['corr'].tolist())
+                if 'corr' in tab_data.keys():
+                    corr_name = 'corr'
+                else:
+                    corr_name = 'poln'
+
+                corrs = np.unique(tab_data[corr_name].tolist())
 
                 for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                    corr_mask = (tab_data['corr'] == corr).tolist()
+                    corr_mask = (tab_data[corr_name] == corr).tolist()
 
                     # Colour by Ant 1
                     spw_data = tab_data['spw'][corr_mask].tolist()
@@ -538,7 +553,7 @@ def delay_freq_figures(table_dict, meta_dict,
                                                 tab_data['spw'][combined_mask].tolist(),
                                                 tab_data['chan'][combined_mask].tolist(),
                                                 tab_data['freq'][combined_mask].tolist(),
-                                                tab_data['corr'][combined_mask].tolist(),
+                                                tab_data[corr_name][combined_mask].tolist(),
                                                 tab_data['ant1name'][combined_mask].tolist(),
                                                 tab_data['ant2name'][combined_mask].tolist(),
                                                 tab_data['time'][combined_mask].tolist())).T
@@ -700,11 +715,16 @@ def amp_gain_freq_figures(table_dict, meta_dict,
 
                 tab_data = table_dict[key][ant_num]
 
-                corrs = np.unique(tab_data['corr'].tolist())
+                if 'corr' in tab_data.keys():
+                    corr_name = 'corr'
+                else:
+                    corr_name = 'poln'
+
+                corrs = np.unique(tab_data[corr_name].tolist())
 
                 for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                    corr_mask = (tab_data['corr'] == corr).tolist()
+                    corr_mask = (tab_data[corr_name] == corr).tolist()
 
                     # Colour by Ant 1
                     spw_data = tab_data['spw'][corr_mask].tolist()
@@ -728,7 +748,7 @@ def amp_gain_freq_figures(table_dict, meta_dict,
                                                 tab_data['spw'][combined_mask].tolist(),
                                                 tab_data['chan'][combined_mask].tolist(),
                                                 tab_data['freq'][combined_mask].tolist(),
-                                                tab_data['corr'][combined_mask].tolist(),
+                                                tab_data[corr_name][combined_mask].tolist(),
                                                 tab_data['ant1name'][combined_mask].tolist(),
                                                 tab_data['ant2name'][combined_mask].tolist(),
                                                 tab_data['time'][combined_mask].tolist())).T

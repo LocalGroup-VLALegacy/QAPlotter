@@ -11,6 +11,7 @@ from astropy.table import Table
 import numpy as np
 import os
 import warnings
+from io import StringIO
 
 
 def extract_source_table(msname, weblog_name='weblog'):
@@ -24,7 +25,7 @@ def extract_source_table(msname, weblog_name='weblog'):
 
     html_table = soup.find('table')
 
-    table = pd.read_html(html_table.decode())
+    table = pd.read_html(StringIO(html_table.decode()))
 
     if isinstance(table, list):
         table = table[0]

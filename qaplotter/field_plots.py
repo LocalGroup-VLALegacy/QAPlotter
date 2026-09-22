@@ -117,18 +117,23 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
             spw_mask = tab_data['spw'] == spw
 
+            if 'corr' in tab_data.keys():
+                corr_name = 'corr'
+            else:
+                corr_name = 'poln'
+
             if corrs is None:
-                corrs = np.unique(tab_data['corr'][spw_mask].tolist())
+                corrs = np.unique(tab_data[corr_name][spw_mask].tolist())
 
             for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                corr_mask = (tab_data['corr'] == corr).tolist()
+                corr_mask = (tab_data[corr_name] == corr).tolist()
 
                 custom_data = np.vstack((tab_data['scan'][spw_mask & corr_mask].tolist(),
                                          tab_data['spw'][spw_mask & corr_mask].tolist(),
                                          make_channel_string(tab_data['chan'][spw_mask & corr_mask].tolist()),
                                          tab_data['freq'][spw_mask & corr_mask].tolist(),
-                                         tab_data['corr'][spw_mask & corr_mask].tolist(),
+                                         tab_data[corr_name][spw_mask & corr_mask].tolist(),
                                          tab_data['ant1name'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
                                          make_casa_timestring(tab_data['time'][spw_mask & corr_mask].tolist()))).T
@@ -383,18 +388,23 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
 
             spw_mask = tab_data['spw'] == spw
 
+            if 'corr' in tab_data.keys():
+                corr_name = 'corr'
+            else:
+                corr_name = 'poln'
+
             if corrs is None:
-                corrs = np.unique(tab_data['corr'][spw_mask].tolist())
+                corrs = np.unique(tab_data[corr_name][spw_mask].tolist())
 
             for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                corr_mask = (tab_data['corr'] == corr).tolist()
+                corr_mask = (tab_data[corr_name] == corr).tolist()
 
                 custom_data = np.vstack((tab_data['scan'][spw_mask & corr_mask].tolist(),
                                          tab_data['spw'][spw_mask & corr_mask].tolist(),
                                          make_channel_string(tab_data['chan'][spw_mask & corr_mask].tolist()),
                                          tab_data['freq'][spw_mask & corr_mask].tolist(),
-                                         tab_data['corr'][spw_mask & corr_mask].tolist(),
+                                         tab_data[corr_name][spw_mask & corr_mask].tolist(),
                                          tab_data['ant1name'][spw_mask & corr_mask].tolist(),
                                          tab_data['ant2name'][spw_mask & corr_mask].tolist(),
                                          make_casa_timestring(tab_data['time'][spw_mask & corr_mask].tolist()))).T

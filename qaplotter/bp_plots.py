@@ -70,17 +70,22 @@ def bp_amp_phase_figures(table_dict, meta_dict,
 
                 tab_data = table_dict[key][spw_num]
 
-                corrs = np.unique(tab_data['corr'].tolist())
+                if 'corr' in tab_data.keys():
+                    corr_name = 'corr'
+                else:
+                    corr_name = 'poln'
+
+                corrs = np.unique(tab_data[corr_name].tolist())
 
                 for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                    corr_mask = (tab_data['corr'] == corr).tolist()
+                    corr_mask = (tab_data[corr_name] == corr).tolist()
 
                     custom_data = np.vstack((tab_data['scan'][corr_mask].tolist(),
                                              tab_data['spw'][corr_mask].tolist(),
                                              tab_data['chan'][corr_mask].tolist(),
                                              tab_data['freq'][corr_mask].tolist(),
-                                             tab_data['corr'][corr_mask].tolist(),
+                                             tab_data[corr_name][corr_mask].tolist(),
                                              tab_data['ant1name'][corr_mask].tolist(),
                                              tab_data['ant2name'][corr_mask].tolist())).T
 
