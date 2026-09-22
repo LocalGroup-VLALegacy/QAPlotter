@@ -10,6 +10,176 @@ from .utils import telescope_time_conversion
 # e.g. RR, LL, RL, LR
 markers = ['circle', 'cross', 'triangle-up', 'triangle-down']
 
+# Per tab_type plot config: which table columns are the plot's x/y
+# values, and which columns to show in the hover text. This is tied to
+# the column names written by ReductionPipeline's casatools-based
+# `make_qa_tables` (spw/scan/corr always present; chan/freq only for the
+# *_chan tables; time only for *_time and amp_phase; ant1/ant2/ant1name/
+# ant2name only for the baseline-resolved tables) -- unlike the old
+# plotms native export, a column is only present where it's meaningful,
+# so there's no generic "x"/"y" pair or universal hover set here.
+PLOT_CONFIG = {
+    'amp_chan': {'x': 'freq', 'y': 'amp',
+                "title": "Amp vs. Freq<br>Time & Baseline avg",
+                "hover": ['scan', 'spw', 'corr', 'chan', 'freq']},
+    'amp_time': {'x': 'time', 'y': 'amp',
+                "title": "Amp vs. Time<br>Freq & Baseline avg",
+                "hover": ['scan', 'spw', 'corr', 'time']},
+    'amp_uvdist': {'x': 'uvdist', 'y': 'amp',
+                  "title": "Amp vs. uv-dist<br>Time & Freq avg",
+                  "hover": ['scan', 'spw', 'corr', 'ant1name', 'ant2name', 'uvdist']},
+    'amp_phase': {'x': 'phase', 'y': 'amp',
+                 "title": "Amp vs. Phase<br>Time & Freq avg",
+                 "hover": ['scan', 'spw', 'corr', 'ant1name', 'ant2name', 'time']},
+    'phase_chan': {'x': 'freq', 'y': 'phase',
+                  "title": "Phase vs. Freq<br>Time & Baseline avg",
+                  "hover": ['scan', 'spw', 'corr', 'chan', 'freq']},
+    'phase_time': {'x': 'time', 'y': 'phase',
+                  "title": "Phase vs. Time<br>Freq & Baseline avg",
+                  "hover": ['scan', 'spw', 'corr', 'time']},
+    'phase_uvdist': {'x': 'uvdist', 'y': 'phase',
+                     "title": "Phase vs. uv-dist<br>Time & Freq avg",
+                     "hover": ['scan', 'spw', 'corr', 'ant1name', 'ant2name', 'uvdist']},
+    'ampresid_uvwave': {'x': 'uvwave', 'y': 'resid',
+                        "title": "Resid Amp vs. uv-wave<br>Time & Freq avg",
+                        "hover": ['scan', 'spw', 'corr', 'ant1name', 'ant2name', 'uvdist', 'uvwave']},
+    'amp_ant1': {'x': 'ant1', 'y': 'amp',
+                "title": "Amp vs. Ant 1.<br>Time & Freq avg",
+                "hover": ['scan', 'spw', 'corr', 'ant1name', 'ant2name']},
+    'phase_ant1': {'x': 'ant1', 'y': 'phase',
+                  "title": "Phase vs. Ant 1.<br>Time & Freq avg",
+                  "hover": ['scan', 'spw', 'corr', 'ant1name', 'ant2name']},
+}
+
+HOVER_LABELS = {'scan': 'Scan', 'spw': 'SPW', 'corr': 'Corr', 'chan': 'Chan',
+                'freq': 'Freq', 'time': 'Time', 'ant1name': 'Ant1',
+                'ant2name': 'Ant2', 'uvdist': 'UVdist', 'uvwave': 'UVwave'}
+
+
+def _casa_timestrings(x, telescope):
+    datetime_vals = telescope_time_conversion(x, telescope=telescope)
+    return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5] for dtime in datetime_vals]
+
+
+def _build_hover(tab_data, mask, fields, telescope):
+    '''
+    Build the customdata array and matching hovertemplate string for
+    whichever of `fields` are actually present in `tab_data` (some, like
+    'ant1name', only exist for the baseline-resolved tables).
+    '''
+
+    cols = []
+    template_parts = []
+
+    for field in fields:
+        if field not in tab_data.colnames:
+            continue
+
+        if field == 'time':
+            vals = _casa_timestrings(tab_data['time'][mask].tolist(), telescope)
+        else:
+            vals = tab_data[field][mask].tolist()
+
+        template_parts.append(f"{HOVER_LABELS[field]}: %{{customdata[{len(cols)}]}}")
+        cols.append(vals)
+
+    customdata = np.vstack(cols).T if cols else None
+    hovertemplate = '<br>'.join(template_parts)
+
+    return customdata, hovertemplate
+
+
+def _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs, spw_labels,
+                     row_col, telescope, first_trace_flag):
+    '''
+    Shared trace-adding loop used by both `target_scan_figure` and
+    `calibrator_scan_figure`. Returns the colors_dict used to populate
+    the SPW/Scan/Corr colour-toggle buttons.
+    '''
+
+    colors_dict = {"SPW": [], "Scan": [], "Corr": []}
+
+    for nn, key in enumerate(exp_keys):
+
+        cfg = PLOT_CONFIG[key]
+
+        if key == 'time' or 'time' in key:
+            def format_xvals(x):
+                return telescope_time_conversion(x, telescope=telescope)
+        else:
+            def format_xvals(x):
+                return x
+
+        tab_data = table_dict[key]
+
+        if len(tab_data) == 0:
+            print("Empty data table found. Skipping")
+            continue
+
+        for nspw, spw in enumerate(spw_nums):
+
+            spw_mask = tab_data['spw'] == spw
+
+            corr_name = 'corr' if 'corr' in tab_data.colnames else 'poln'
+
+            these_corrs = corrs
+            if these_corrs is None:
+                these_corrs = np.unique(tab_data[corr_name][spw_mask].tolist())
+
+            for nc, (corr, marker) in enumerate(zip(these_corrs, markers)):
+
+                corr_mask = (tab_data[corr_name] == corr).tolist()
+                full_mask = spw_mask & corr_mask
+
+                customdata, hovertemplate = _build_hover(tab_data, full_mask,
+                                                         cfg['hover'], telescope)
+
+                n_points = int(np.count_nonzero(full_mask))
+
+                colors_dict['SPW'].append([px.colors.qualitative.Safe[nspw % 11]
+                                           for _ in range(n_points)])
+
+                scan_data = tab_data['scan'][full_mask].tolist()
+                scan_map_dict = {scan: n_uniq for n_uniq, scan in enumerate(np.unique(scan_data))}
+                colors_dict['Scan'].append([px.colors.qualitative.Safe[scan_map_dict[scan] % 11]
+                                            for scan in scan_data])
+
+                colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
+                                            for _ in range(n_points)])
+
+                spw_str = f"SPW {spw}"
+                if spw in spw_labels:
+                    spw_str += f"<br>({spw_labels[spw]})"
+
+                row, col = row_col(key)
+
+                fig.append_trace(go.Scattergl(x=format_xvals(tab_data[cfg['x']][full_mask]),
+                                              y=tab_data[cfg['y']][full_mask],
+                                              mode='markers',
+                                              marker=dict(symbol=marker, size=7,
+                                                          color=colors_dict['SPW'][-1]),
+                                              customdata=customdata,
+                                              hovertemplate=hovertemplate,
+                                              name=spw_str,
+                                              legendgroup=str(spw),
+                                              showlegend=first_trace_flag(nn, nspw, nc)),
+                                 row=row, col=col)
+
+    return colors_dict
+
+
+def _add_color_buttons(fig, colors_dict):
+
+    buttons = [dict(label=label, method='update',
+                    args=[{'marker.color': list(colors_dict[label])}])
+              for label in ('SPW', 'Scan', 'Corr')]
+
+    updatemenus = go.layout.Updatemenu(type='buttons', direction='left',
+                                       showactive=True, x=1.01, xanchor="right",
+                                       y=1.15, yanchor="top", buttons=buttons)
+
+    fig.update_layout(updatemenus=[updatemenus], margin=dict(t=150))
+
 
 def target_scan_figure(table_dict, meta_dict, show=False,
                        scatter_plot=go.Scattergl,
@@ -21,24 +191,15 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     Make a 3-panel figure for target scans.
     '''
 
-    # There should be 3 fields:
-    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1,
-                             "title": "Amp vs. Freq<br>Time & Baseline avg"},
-                'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2,
-                             "title": "Amp vs. Time<br>Freq & Baseline avg"},
-                'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3,
-                               "title": "Amp vs. uv-dist<br>Time & Freq avg"}}
+    exp_keys = ['amp_chan', 'amp_time', 'amp_uvdist']
     for key in exp_keys:
         if key not in table_dict.keys():
             raise KeyError(f"Required dict key {key} not found.")
 
-    subplot_titles = [exp_keys['amp_chan']['title'],
-                      exp_keys['amp_time']['title'],
-                      exp_keys['amp_uvdist']['title']]
+    subplot_titles = [PLOT_CONFIG[key]['title'] for key in exp_keys]
+    row_col = {key: (1, col) for col, key in enumerate(exp_keys, start=1)}
 
     fig = make_subplots(rows=1, cols=3, subplot_titles=subplot_titles)
-
-    hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
 
@@ -48,7 +209,6 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     spw_labels = {}
     if spw_dict is not None:
         for key in spw_dict:
-            # Filter out the continuum SPWs
             if "continuum" in spw_dict[key]['label']:
                 continue
             spw_labels[key] = spw_dict[key]['label']
@@ -56,161 +216,22 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     if show_linesonly and spw_dict is not None:
         line_spw_nums = []
         for key in spw_dict:
-            # Filter out the continuum SPWs
             if "continuum" in spw_dict[key]['label']:
                 continue
-            # In case there are SPWs not in the data.
             if not key in spw_nums:
                 continue
             line_spw_nums.append(key)
 
         spw_nums = line_spw_nums
 
-    def make_casa_timestring(x):
+    colors_dict = _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs,
+                                   spw_labels, lambda key: row_col[key], telescope,
+                                   first_trace_flag=lambda nn, nspw, nc: (nn == 0 and nc == 0))
 
-        datetime_vals = telescope_time_conversion(x, telescope=telescope)
-
-        return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
-                for dtime in datetime_vals]
-
-    colors_dict = {"SPW": [],
-                   "Scan": [],
-                   "Ant1": [],
-                   "Ant2": [],
-                   "Corr": []}
-
-    for nn, key in enumerate(exp_keys):
-
-        # Convert the time axis values to strings
-        # Time is always the x-axis.
-        if "time" in key:
-            def format_xvals(x):
-                datetime_vals = telescope_time_conversion(x, telescope=telescope)
-
-                return datetime_vals
-        else:
-            def format_xvals(x):
-                return x
-
-        # Make channel strings that can account for channel averaging used in the plotms output:
-        chan_avg = int(meta_dict[key]['channel average'])
-        # No averaging = do nothing
-        if chan_avg == 1:
-            def make_channel_string(x):
-                return x
-        else:
-            def make_channel_string(x):
-                '''
-                Output a string with the channel range in the average
-                '''
-                return [f"{chan_avg * val}~{chan_avg * (val+1) - 1}" for val in x]
-
-
-        tab_data = table_dict[key]
-
-        # Check if the table is empty
-        if len(tab_data) == 0:
-            print("Empty data table found. Skipping")
-            continue
-
-        for nspw, spw in enumerate(spw_nums):
-
-            spw_mask = tab_data['spw'] == spw
-
-            if 'corr' in tab_data.keys():
-                corr_name = 'corr'
-            else:
-                corr_name = 'poln'
-
-            if corrs is None:
-                corrs = np.unique(tab_data[corr_name][spw_mask].tolist())
-
-            for nc, (corr, marker) in enumerate(zip(corrs, markers)):
-
-                corr_mask = (tab_data[corr_name] == corr).tolist()
-
-                custom_data = np.vstack((tab_data['scan'][spw_mask & corr_mask].tolist(),
-                                         tab_data['spw'][spw_mask & corr_mask].tolist(),
-                                         make_channel_string(tab_data['chan'][spw_mask & corr_mask].tolist()),
-                                         tab_data['freq'][spw_mask & corr_mask].tolist(),
-                                         tab_data[corr_name][spw_mask & corr_mask].tolist(),
-                                         tab_data['ant1name'][spw_mask & corr_mask].tolist(),
-                                         tab_data['ant2name'][spw_mask & corr_mask].tolist(),
-                                         make_casa_timestring(tab_data['time'][spw_mask & corr_mask].tolist()))).T
-
-                # We're also going to record colors based on Scan and SPW
-                # SPW are unique and the colour palette has 11 colours.
-                spw_data = tab_data['spw'][spw_mask & corr_mask].tolist()
-
-                colors_dict['SPW'].append([px.colors.qualitative.Safe[nspw % 11] for _ in range(len(spw_data))])
-
-                # Want to map to unique scan values, not the scan numbers themselves
-                # (i.e., 50, 60, 70 -> 0, 1, 2)
-                scan_data = tab_data['scan'][spw_mask & corr_mask].tolist()
-
-                scan_map_dict = {}
-                for n_uniq, scan in enumerate(np.unique(scan_data)):
-                    scan_map_dict[scan] = n_uniq
-
-                colors_dict['Scan'].append([px.colors.qualitative.Safe[scan_map_dict[scan] % 11]
-                                            for scan in scan_data])
-
-                # And antennas for colours. Same approach as scans
-                ant_data = tab_data['ant1name'][spw_mask & corr_mask].tolist()
-
-                ant1_map_dict = {}
-                for n_uniq, ant in enumerate(np.unique(ant_data)):
-                    ant1_map_dict[ant] = n_uniq
-
-                colors_dict['Ant1'].append([px.colors.qualitative.Safe[ant1_map_dict[ant] % 11]
-                                            for ant in ant_data])
-
-                ant_data = tab_data['ant2name'][spw_mask & corr_mask].tolist()
-
-                ant2_map_dict = {}
-                for n_uniq, ant in enumerate(np.unique(ant_data)):
-                    ant2_map_dict[ant] = n_uniq
-
-                colors_dict['Ant2'].append([px.colors.qualitative.Safe[ant2_map_dict[ant] % 11]
-                                            for ant in ant_data])
-
-                # And corr
-                colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
-                                            for _ in range(len(spw_data))])
-
-                spw_str = f"SPW {spw}"
-                if spw in spw_labels:
-                    spw_str += f"<br>({spw_labels[spw]})"
-
-                fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
-                                              y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
-                                              mode='markers',
-                                              marker=dict(symbol=marker,
-                                                          size=7,
-                                                          color=colors_dict['SPW'][-1]),
-                                              customdata=custom_data,
-                                              hovertemplate=hovertemplate,
-                                              name=spw_str,
-                                              legendgroup=str(spw),
-                                              showlegend=True if (nn == 0 and nc == 0) else False),
-                                 row=exp_keys[key]['row'], col=exp_keys[key]['col'],
-                                 )
-
-    # Here's what needs to be updated for the colors
-    # fig['data'][0]['marker']['color']
-
-    # Make custom time ticks in a nicer format.
-    # Also scale with zoom to stop tick labels from overlapping in different subplots.
-    for key in exp_keys:
-        if "time" not in key:
-            continue
-
-        fig.update_xaxes(rangeslider_visible=False,
-                         tickformatstops=[dict(dtickrange=[None, 1000e3], value="%H:%M:%S"),
-                                          dict(dtickrange=[1000e3, None], value="%H:%M:%S"),
-                                          ],
-                         row=exp_keys[key]['row'],
-                         col=exp_keys[key]['col'])
+    fig.update_xaxes(rangeslider_visible=False,
+                     tickformatstops=[dict(dtickrange=[None, 1000e3], value="%H:%M:%S"),
+                                      dict(dtickrange=[1000e3, None], value="%H:%M:%S")],
+                     row=1, col=2)
 
     fig.update_xaxes(nticks=8)
     fig.update_yaxes(nticks=8)
@@ -226,47 +247,11 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     meta = meta_dict['amp_time']
 
     fig.update_layout(
-        title=f"Field: {meta['field']}  Intent: {meta_dict['intent']}<br>MS: {meta['vis']}",
-        font=dict(family="Courier New, monospace",
-                  size=15,
-                  color="#7f7f7f")
+        title=f"Field: {meta['field']}  Intent: {meta_dict.get('intent', 'NONE')}<br>MS: {meta['vis']}",
+        font=dict(family="Courier New, monospace", size=15, color="#7f7f7f")
     )
 
-    updatemenus = go.layout.Updatemenu(type='buttons',
-                                       direction='left',
-                                       showactive=True,
-                                       x=1.01,
-                                       xanchor="right",
-                                       y=1.15,
-                                       yanchor="top",
-                                       buttons=list([dict(label='SPW',
-                                                          method='update',
-                                                          args=[{'marker.color': [col for col in colors_dict['SPW']]}],
-                                                          ),
-
-                                                    dict(label='Scan',
-                                                         method='update',
-                                                         args=[{'marker.color': [col for col in colors_dict['Scan']]}],
-                                                         ),
-
-                                                    dict(label='Ant1',
-                                                         method='update',
-                                                         args=[{'marker.color': [col for col in colors_dict['Ant1']]}],
-                                                         ),
-
-                                                    dict(label='Ant2',
-                                                         method='update',
-                                                         args=[{'marker.color': [col for col in colors_dict['Ant2']]}],
-                                                         ),
-
-                                                    dict(label='Corr',
-                                                         method='update',
-                                                         args=[{'marker.color': [col for col in colors_dict['Corr']]}],
-                                                         ),
-                                                     ]))
-
-    fig.update_layout(updatemenus=[updatemenus],
-                      margin=dict(t=150))
+    _add_color_buttons(fig, colors_dict)
 
     if show:
         fig.show()
@@ -281,204 +266,53 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     Make a 12-panel (4x3) figure for calibrator scans.
     '''
 
-    # There should be 10 fields:
-    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1,
-                             "title": "Amp vs. Freq<br>Time & Baseline avg"},
-                'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2,
-                             "title": "Amp vs. Time<br>Freq & Baseline avg"},
-                'amp_uvdist': {'x': 'x', 'y': 'y', 'row': 1, 'col': 3,
-                               "title": "Amp vs. uv-dist<br>Time & Freq avg"},
-                'amp_phase': {'x': 'y', 'y': 'x', 'row': 1, 'col': 4,
-                              "title": "Amp vs. Phase<br>Time & Freq avg"},
-                'phase_chan': {'x': 'freq', 'y': 'y', 'row': 2, 'col': 1,
-                               "title": "Phase vs. Freq<br>Time & Baseline avg"},
-                'phase_time': {'x': 'time', 'y': 'y', 'row': 2, 'col': 2,
-                               "title": "Phase vs. Time<br>Freq & Baseline avg"},
-                'phase_uvdist': {'x': 'x', 'y': 'y', 'row': 2, 'col': 3,
-                                 "title": "Phase vs. uv-dist<br>Time & Freq avg"},
-                'ampresid_uvwave': {'x': 'x', 'y': 'y', 'row': 2, 'col': 4,
-                                    "title": "Resid Amp vs. uv-wave<br>Time & Freq avg"},
-                'amp_ant1': {'x': 'x', 'y': 'y', 'row': 3, 'col': 1,
-                             "title": "Amp vs. Ant 1.<br>Time & Freq avg"},
-                'phase_ant1': {'x': 'x', 'y': 'y', 'row': 3, 'col': 2,
-                               "title": "Phase vs. Ant 1.<br>Time & Freq avg"}}
+    exp_keys = ['amp_chan', 'amp_time', 'amp_uvdist', 'amp_phase',
+               'phase_chan', 'phase_time', 'phase_uvdist', 'ampresid_uvwave',
+               'amp_ant1', 'phase_ant1']
 
     # Make the antenna plots optional because they were added later.
-    if not 'amp_ant1' in table_dict.keys():
-        del exp_keys['amp_ant1']
-    if not 'phase_ant1' in table_dict.keys():
-        del exp_keys['phase_ant1']
+    if 'amp_ant1' not in table_dict.keys():
+        exp_keys.remove('amp_ant1')
+    if 'phase_ant1' not in table_dict.keys():
+        exp_keys.remove('phase_ant1')
 
     for key in exp_keys:
         if key not in table_dict.keys():
             raise KeyError(f"Required dict key {key} not found.")
 
-    # It's easier to just do this by-hand. Or switch to an ordereddict
-    subplot_titles = [exp_keys['amp_chan']['title'],
-                      exp_keys['amp_time']['title'],
-                      exp_keys['amp_uvdist']['title'],
-                      exp_keys['amp_phase']['title'],
-                      exp_keys['phase_chan']['title'],
-                      exp_keys['phase_time']['title'],
-                      exp_keys['phase_uvdist']['title'],
-                      exp_keys['ampresid_uvwave']['title']]
+    grid_positions = {'amp_chan': (1, 1), 'amp_time': (1, 2), 'amp_uvdist': (1, 3),
+                      'amp_phase': (1, 4), 'phase_chan': (2, 1), 'phase_time': (2, 2),
+                      'phase_uvdist': (2, 3), 'ampresid_uvwave': (2, 4),
+                      'amp_ant1': (3, 1), 'phase_ant1': (3, 2)}
 
-    if 'amp_ant1' in table_dict.keys():
-        subplot_titles.append(exp_keys['amp_ant1']['title'])
-    if 'phase_ant1' in table_dict.keys():
-        subplot_titles.append(exp_keys['phase_ant1']['title'])
+    subplot_titles_bykey = {key: PLOT_CONFIG[key]['title'] for key in exp_keys}
+    # Keep the original panel ordering (row-major over the 4x3 grid) for titles.
+    subplot_titles = [subplot_titles_bykey[key] for key in
+                      sorted(exp_keys, key=lambda key: grid_positions[key])]
 
     fig = make_subplots(rows=3, cols=4, subplot_titles=subplot_titles)
-
-    hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}<br>Time: %{customdata[7]}'
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
 
     spw_labels = {}
     if spw_dict is not None:
         for key in spw_dict:
-            # Filter out the continuum SPWs
             if "continuum" in spw_dict[key]['label']:
                 continue
             spw_labels[key] = spw_dict[key]['label']
 
-    def make_casa_timestring(x):
+    colors_dict = _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs,
+                                   spw_labels, lambda key: grid_positions[key], telescope,
+                                   first_trace_flag=lambda nn, nspw, nc: (nspw == 0 and nn == 0 and nc == 0))
 
-        datetime_vals = telescope_time_conversion(x, telescope=telescope)
-
-        return [dtime.strftime("%Y/%m/%d/%H:%M:%S.%f")[:-5]
-                for dtime in datetime_vals]
-
-    colors_dict = {"SPW": [],
-                   "Scan": [],
-                   "Ant1": [],
-                   "Ant2": [],
-                   "Corr": []}
-
-    for nspw, spw in enumerate(spw_nums):
-
-        for nn, key in enumerate(exp_keys):
-
-            # Convert the time axis values to strings
-            # Time is always the x-axis.
-            if "time" in key:
-                def format_xvals(x):
-                    datetime_vals = telescope_time_conversion(x, telescope=telescope)
-
-                    return datetime_vals
-            else:
-                def format_xvals(x):
-                    return x
-
-            # Make channel strings that can account for channel averaging used in the plotms output:
-            chan_avg = int(meta_dict[key]['channel average'])
-            # No averaging = do nothing
-            if chan_avg == 1:
-                def make_channel_string(x):
-                    return x
-            else:
-                def make_channel_string(x):
-                    '''
-                    Output a string with the channel range in the average
-                    '''
-                    return [f"{chan_avg * val}~{chan_avg * (val+1) - 1}" for val in x]
-
-
-            tab_data = table_dict[key]
-
-            spw_mask = tab_data['spw'] == spw
-
-            if 'corr' in tab_data.keys():
-                corr_name = 'corr'
-            else:
-                corr_name = 'poln'
-
-            if corrs is None:
-                corrs = np.unique(tab_data[corr_name][spw_mask].tolist())
-
-            for nc, (corr, marker) in enumerate(zip(corrs, markers)):
-
-                corr_mask = (tab_data[corr_name] == corr).tolist()
-
-                custom_data = np.vstack((tab_data['scan'][spw_mask & corr_mask].tolist(),
-                                         tab_data['spw'][spw_mask & corr_mask].tolist(),
-                                         make_channel_string(tab_data['chan'][spw_mask & corr_mask].tolist()),
-                                         tab_data['freq'][spw_mask & corr_mask].tolist(),
-                                         tab_data[corr_name][spw_mask & corr_mask].tolist(),
-                                         tab_data['ant1name'][spw_mask & corr_mask].tolist(),
-                                         tab_data['ant2name'][spw_mask & corr_mask].tolist(),
-                                         make_casa_timestring(tab_data['time'][spw_mask & corr_mask].tolist()))).T
-
-                # We're also going to record colors based on Scan and SPW
-                # SPW are unique and the colour palette has 11 colours.
-                spw_data = tab_data['spw'][spw_mask & corr_mask].tolist()
-
-                colors_dict['SPW'].append([px.colors.qualitative.Safe[nspw % 11] for _ in range(len(spw_data))])
-
-                # Want to map to unique scan values, not the scan numbers themselves
-                # (i.e., 50, 60, 70 -> 0, 1, 2)
-                scan_data = tab_data['scan'][spw_mask & corr_mask].tolist()
-
-                scan_map_dict = {}
-                for n_uniq, scan in enumerate(np.unique(scan_data)):
-                    scan_map_dict[scan] = n_uniq
-
-                colors_dict['Scan'].append([px.colors.qualitative.Safe[scan_map_dict[scan] % 11]
-                                            for scan in scan_data])
-
-                # And antennas for colours. Same approach as scans
-                ant_data = tab_data['ant1name'][spw_mask & corr_mask].tolist()
-
-                ant1_map_dict = {}
-                for n_uniq, ant in enumerate(np.unique(ant_data)):
-                    ant1_map_dict[ant] = n_uniq
-
-                colors_dict['Ant1'].append([px.colors.qualitative.Safe[ant1_map_dict[ant] % 11]
-                                            for ant in ant_data])
-
-                ant_data = tab_data['ant2name'][spw_mask & corr_mask].tolist()
-
-                ant2_map_dict = {}
-                for n_uniq, ant in enumerate(np.unique(ant_data)):
-                    ant2_map_dict[ant] = n_uniq
-
-                colors_dict['Ant2'].append([px.colors.qualitative.Safe[ant2_map_dict[ant] % 11]
-                                            for ant in ant_data])
-
-                # And corr
-                colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
-                                            for _ in range(len(spw_data))])
-
-                spw_str = f"SPW {spw}"
-                if spw in spw_labels:
-                    spw_str += f"<br>({spw_labels[spw]})"
-
-                fig.append_trace(scatter_plot(x=format_xvals(tab_data[exp_keys[key]['x']][spw_mask & corr_mask]),
-                                              y=tab_data[exp_keys[key]['y']][spw_mask & corr_mask],
-                                              mode='markers',
-                                              marker=dict(symbol=marker,
-                                                          size=7,
-                                                          color=px.colors.qualitative.Safe[nspw % 11]),
-                                              customdata=custom_data,
-                                              hovertemplate=hovertemplate,
-                                              name=spw_str,
-                                              legendgroup=str(spw),
-                                              showlegend=True if (nn == 0 and nc == 0) else False),
-                                 row=exp_keys[key]['row'], col=exp_keys[key]['col'],
-                                 )
-
-    # Make custom time ticks in a nicer format.
-    # Also scale with zoom to stop tick labels from overlapping in different subplots.
     for key in exp_keys:
         if "time" not in key:
             continue
-
+        row, col = grid_positions[key]
         fig.update_xaxes(rangeslider_visible=False,
                          tickformatstops=[dict(dtickrange=[None, 1000], value="%H:%M:%S"),
-                                          dict(dtickrange=[1000, None], value="%H:%M:%S"),
-                                          ],
-                         row=exp_keys[key]['row'],
-                         col=exp_keys[key]['col'])
+                                          dict(dtickrange=[1000, None], value="%H:%M:%S")],
+                         row=row, col=col)
 
     fig.update_xaxes(nticks=8)
     fig.update_yaxes(nticks=8)
@@ -494,7 +328,6 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     fig['layout']['xaxis9']['title'] = 'Antenna 1'
     fig['layout']['xaxis10']['title'] = 'Antenna 1'
 
-    # Check these: is it actually Jy or Jy/deg, etc?
     fig['layout']['yaxis']['title'] = 'Amplitude (Jy)'
     fig['layout']['yaxis2']['title'] = 'Amplitude (Jy)'
     fig['layout']['yaxis3']['title'] = 'Amplitude (Jy)'
@@ -507,55 +340,14 @@ def calibrator_scan_figure(table_dict, meta_dict, show=False, scatter_plot=go.Sc
     fig['layout']['yaxis10']['title'] = 'Phase (deg)'
 
     meta = meta_dict['amp_time']
-
-    if 'intent' not in meta_dict:
-        intent_str = "NONE"
-    else:
-        intent_str = meta_dict['intent']
+    intent_str = meta_dict.get('intent', 'NONE')
 
     fig.update_layout(
         title=f"Field: {meta['field']}  Intent: {intent_str}<br>MS: {meta['vis']}",
-        font=dict(
-            family="Courier New, monospace",
-            size=15,
-            color="#7f7f7f")
+        font=dict(family="Courier New, monospace", size=15, color="#7f7f7f")
     )
 
-    updatemenus = go.layout.Updatemenu(type='buttons',
-                                       direction='left',
-                                       showactive=True,
-                                       x=1.01,
-                                       xanchor="right",
-                                       y=1.15,
-                                       yanchor="top",
-                                       buttons=list([dict(label='SPW',
-                                                          method='update',
-                                                          args=[{'marker.color': [col for col in colors_dict['SPW']]}],
-                                                          ),
-
-                                                    dict(label='Scan',
-                                                         method='update',
-                                                         args=[{'marker.color': [col for col in colors_dict['Scan']]}],
-                                                         ),
-
-                                                    dict(label='Ant1',
-                                                         method='update',
-                                                         args=[{'marker.color': [col for col in colors_dict['Ant1']]}],
-                                                         ),
-
-                                                    dict(label='Ant2',
-                                                         method='update',
-                                                         args=[{'marker.color': [col for col in colors_dict['Ant2']]}],
-                                                         ),
-
-                                                    dict(label='Corr',
-                                                         method='update',
-                                                         args=[{'marker.color': [col for col in colors_dict['Corr']]}],
-                                                         ),
-                                                     ]))
-
-    fig.update_layout(updatemenus=[updatemenus],
-                      margin=dict(t=150))
+    _add_color_buttons(fig, colors_dict)
 
     if show:
         fig.show()

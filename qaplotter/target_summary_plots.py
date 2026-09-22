@@ -25,10 +25,8 @@ def target_summary_amptime_figure(fields, folder, show=False,
     Make a N SPW-panel figure over all targets.
     '''
 
-    txt_files = glob(f"{folder}/*.txt")
-
     # This summary only uses amp_time
-    exp_keys = {'amp_time': {'x': 'time', 'y': 'y', 'row': 1, 'col': 2,
+    exp_keys = {'amp_time': {'x': 'time', 'y': 'amp', 'row': 1, 'col': 2,
                              "title": "Amp vs. Time<br>Freq & Baseline avg"}}
 
     # Find all unique SPW nums over all target fields
@@ -87,7 +85,10 @@ def target_summary_amptime_figure(fields, folder, show=False,
     fig = make_subplots(rows=nrow, cols=ncol, subplot_titles=subplot_titles,
                         shared_xaxes=False, shared_yaxes=False)
 
-    hovertemplate = 'Field name: %{customdata[0]}<br>Field number: %{customdata[1]}<br>Scan: %{customdata[2]}<br>SPW: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Time: %{customdata[5]}'
+    # No per-row numeric field id in the casatools/ecsv tables (each file is
+    # already scoped to one field), unlike the old plotms native export --
+    # 'fieldname' (added below) already identifies the field.
+    hovertemplate = 'Field name: %{customdata[0]}<br>Scan: %{customdata[1]}<br>SPW: %{customdata[2]}<br>Corr: %{customdata[3]}<br>Time: %{customdata[4]}'
 
     def make_casa_timestring(x):
 
@@ -148,7 +149,6 @@ def target_summary_amptime_figure(fields, folder, show=False,
                 all_mask = spw_mask & field_mask & corr_mask
 
                 custom_data = np.vstack((tab_data['fieldname'][all_mask].tolist(),
-                                        tab_data['field'][all_mask].tolist(),
                                         tab_data['scan'][all_mask].tolist(),
                                         tab_data['spw'][all_mask].tolist(),
                                         tab_data[corr_name][all_mask].tolist(),
@@ -177,8 +177,8 @@ def target_summary_amptime_figure(fields, folder, show=False,
                 colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
                                             for _ in range(len(corr_data))])
 
-                fig.append_trace(scatter_plot(x=format_xvals(tab_data['x'][all_mask]),
-                                            y=tab_data['y'][all_mask],
+                fig.append_trace(scatter_plot(x=format_xvals(tab_data['time'][all_mask]),
+                                            y=tab_data['amp'][all_mask],
                                             mode='markers',
                                             marker=dict(symbol=marker,
                                                         size=7,
@@ -267,10 +267,8 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
     Make a N SPW-panel figure over all targets.
     '''
 
-    txt_files = glob(f"{folder}/*.txt")
-
     # This summary only uses amp_time
-    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'y', 'row': 1, 'col': 1,
+    exp_keys = {'amp_chan': {'x': 'freq', 'y': 'amp', 'row': 1, 'col': 1,
                              "title": "Amp vs. Freq<br>Time & Baseline avg"}}
 
     # Find all unique SPW nums over all target fields
@@ -323,7 +321,9 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
     fig = make_subplots(rows=nrow, cols=ncol, subplot_titles=subplot_titles,
                         shared_xaxes=False, shared_yaxes=False)
 
-    hovertemplate = 'SPW: %{customdata[0]}<br>Field: %{customdata[1]}<br>Field number: %{customdata[2]}<br>Scan: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Channel: %{customdata[5]}'
+    # No per-row numeric field id in the casatools/ecsv tables -- see the
+    # equivalent note in target_summary_amptime_figure.
+    hovertemplate = 'SPW: %{customdata[0]}<br>Field: %{customdata[1]}<br>Scan: %{customdata[2]}<br>Corr: %{customdata[3]}<br>Channel: %{customdata[4]}'
 
     colors_dict = {"SPW": [], "Scan": [],
                    "Corr": []}
@@ -366,7 +366,6 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
 
                 custom_data = np.vstack((tab_data['spw'][all_mask].tolist(),
                                         tab_data['fieldname'][all_mask].tolist(),
-                                        tab_data['field'][all_mask].tolist(),
                                         tab_data['scan'][all_mask].tolist(),
                                         tab_data[corr_name][all_mask].tolist(),
                                         tab_data['chan'][all_mask].tolist())).T
@@ -399,7 +398,7 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
                     spw_str += f"<br>({spw_labels[spw]})"
 
                 fig.append_trace(scatter_plot(x=tab_data['freq'][all_mask],
-                                            y=tab_data['y'][all_mask],
+                                            y=tab_data['amp'][all_mask],
                                             mode='markers',
                                             marker=dict(symbol=marker,
                                                         size=7,

@@ -8,6 +8,85 @@ osjoin = os.path.join
 
 
 def read_casa_txt(filename):
+    '''
+    Read a QA data table, dispatching on file extension:
+
+    - ".ecsv": tables written by the casatools-based `make_qa_tables`
+      (ReductionPipeline >= the plotms removal). Self-describing astropy
+      ECSV; the header/units-row parsing below does not apply.
+    - anything else (".txt"): the original plotms native text export.
+
+    Both older (plotms) and newer (casatools/ecsv) pipeline outputs can
+    be present side by side (e.g. re-running QA on older products), so
+    this dispatch is by the concrete file rather than a global setting.
+    '''
+
+    if filename.endswith('.ecsv'):
+        return _read_casa_txt_ecsv(filename)
+
+    return _read_casa_txt_plotms(filename)
+
+
+def _read_casa_txt_ecsv(filename):
+
+    try:
+        tab = Table.read(filename, format='ascii.ecsv')
+    except Exception as e:
+        print(f"Failed reading {filename} with exception {e}.")
+        return Table(), {}
+
+    # table.meta is already a plain dict of the run/table info
+    # (field, scan, vis, ydatacolumn) written by make_qa_tables.
+    meta_dict = dict(tab.meta)
+
+    return tab, meta_dict
+
+
+# plotms's native export always uses generic 'x'/'y' columns for
+# whatever the plot's xaxis/yaxis was (plus a few tab-type-specific ones
+# like 'chan'/'freq'/'time'/'ant1'/'ant2' that happen to be redundant
+# with 'x' or 'y' for some tab_types). field_plots.py now expects the
+# same descriptive column names the casatools/ecsv writer uses
+# (amp/phase/uvdist/uvwave/resid), so alias 'x'/'y' to those based on
+# the tab_type encoded in the filename -- only for whichever of 'x'/'y'
+# doesn't already have a same-valued named column (e.g. 'time' for the
+# *_time tables, 'chan'/'freq' for the *_chan tables, 'ant1'/'ant2' for
+# the *_ant1 tables are already present under their real names).
+_LEGACY_VALUE_ALIASES = {
+    'amp_chan': {'y': 'amp'},
+    'amp_time': {'y': 'amp'},
+    'amp_uvdist': {'x': 'uvdist', 'y': 'amp'},
+    'amp_phase': {'x': 'amp', 'y': 'phase'},
+    'phase_chan': {'y': 'phase'},
+    'phase_time': {'y': 'phase'},
+    'phase_uvdist': {'x': 'uvdist', 'y': 'phase'},
+    'ampresid_uvwave': {'x': 'uvwave', 'y': 'resid'},
+    'amp_ant1': {'y': 'amp'},
+    'phase_ant1': {'y': 'phase'},
+}
+
+
+def _alias_legacy_columns(tab, filename):
+    '''
+    No-op for anything that isn't one of the known MS-QA table types
+    (e.g. calibration-table exports, which field_plots.py doesn't touch
+    and keep their own plotms-native column names).
+    '''
+
+    basename = os.path.basename(filename)
+    tab_type = next((t for t in sorted(_LEGACY_VALUE_ALIASES, key=len, reverse=True)
+                     if t in basename), None)
+    if tab_type is None:
+        return tab
+
+    for generic_col, real_name in _LEGACY_VALUE_ALIASES[tab_type].items():
+        if generic_col in tab.colnames and real_name not in tab.colnames:
+            tab[real_name] = tab[generic_col]
+
+    return tab
+
+
+def _read_casa_txt_plotms(filename):
 
     # Grab the meta-data from the header
     meta_lines = skim_header_metadata(filename)
@@ -24,8 +103,9 @@ def read_casa_txt(filename):
                         format='ascii.commented_header',
                         header_start=header_start,
                         data_start=data_start)
+        tab = _alias_legacy_columns(tab, filename)
     except Exception as e:
-        print(f"Failured reading {tabname} with exception {e}.")
+        print(f"Failed reading {filename} with exception {e}.")
         tab = Table()
 
     return tab, meta_dict
@@ -110,9 +190,26 @@ def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
 
     print(f" On field {fieldname}.")
 
+    # Both the legacy plotms ".txt" export and the newer casatools-based
+    # ".ecsv" export may be present (e.g. re-running QA on older
+    # products); read_casa_txt itself dispatches on the extension, so
+    # just try both here and use whichever is found. An empty ".ecsv"
+    # file is never written (make_qa_tables skips it outright when there
+    # is no valid data), but it always carries a non-trivial YAML header,
+    # so a size floor tuned for plotms's flakiness (near-empty ".txt"
+    # exports) would wrongly reject small-but-valid ecsv tables.
+    exts = ['txt', 'ecsv']
+    min_size = {'txt': 1000, 'ecsv': 200}
+
     for tab_type in tab_types:
-        tabname = osjoin(inp_path, f"field_{fieldname}_{tab_type}.txt")
-        if os.path.exists(tabname):
+        tabname = None
+        for ext in exts:
+            candidate = osjoin(inp_path, f"field_{fieldname}_{tab_type}.{ext}")
+            if os.path.exists(candidate):
+                tabname = candidate
+                break
+
+        if tabname is not None:
             out = read_casa_txt(tabname)
 
             table_dict[tab_type] = out[0]
@@ -122,17 +219,20 @@ def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
             # Recent change to output txt tables per scan to reduce the memory footprint
             # when calling plotms
             if try_per_scan:
-                tabnames = list(glob(osjoin(inp_path, f"field_{fieldname}_{tab_type}.scan_*.txt")))
+                tabnames = []
+                for ext in exts:
+                    tabnames.extend(glob(osjoin(inp_path, f"field_{fieldname}_{tab_type}.scan_*.{ext}")))
 
                 if len(tabnames) == 0:
-                    print(f"Could not find {tabname} per scans. Skipping.")
+                    print(f"Could not find {tab_type} tables for {fieldname} per scans. Skipping.")
                     continue
 
                 # Loop through and stack the tables
                 scan_tables = []
                 for tabname in tabnames:
                     # Skip empty tables
-                    if os.path.getsize(tabname) < 1000:
+                    ext = tabname.rsplit('.', 1)[-1]
+                    if os.path.getsize(tabname) < min_size.get(ext, 1000):
                         continue
 
                     out = read_casa_txt(tabname)
@@ -140,10 +240,14 @@ def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
                     scan_tables.append(out[0])
 
                 if len(scan_tables) == 0:
-                    print(f"Could not find {tabname} per scans. Skipping.")
+                    print(f"Could not find {tab_type} tables for {fieldname} per scans. Skipping.")
                     continue
 
-                comb_table = vstack(scan_tables)
+                # Each scan's table.meta['scan'] necessarily differs; the
+                # combined table's own 'scan' column (added by the
+                # casatools-based writer) is what matters row-to-row, so
+                # don't warn about the meta-level conflict.
+                comb_table = vstack(scan_tables, metadata_conflicts='silent')
 
                 # CASA v6.6 is outputting a "poln" column name; previous versions used 'corr'
                 if 'poln' in comb_table.colnames:
@@ -157,7 +261,7 @@ def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
 
             else:
                 if not try_per_scan:
-                    print(f"Could not find {tabname}. Skipping.")
+                    print(f"Could not find {tab_type} table for {fieldname}. Skipping.")
 
     return table_dict, meta_dict
 
