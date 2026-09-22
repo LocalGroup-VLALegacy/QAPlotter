@@ -133,12 +133,17 @@ def target_summary_amptime_figure(fields, folder, show=False,
 
             spw_mask = tab_data['spw'] == spw
 
+            if 'corr' in tab_data.keys():
+                corr_name = 'corr'
+            else:
+                corr_name = 'poln'
+
             if corrs is None:
-                corrs = np.unique(tab_data['corr'][spw_mask].tolist())
+                corrs = np.unique(tab_data[corr_name][spw_mask].tolist())
 
             for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                corr_mask = (tab_data['corr'] == corr).tolist()
+                corr_mask = (tab_data[corr_name] == corr).tolist()
 
                 all_mask = spw_mask & field_mask & corr_mask
 
@@ -146,7 +151,7 @@ def target_summary_amptime_figure(fields, folder, show=False,
                                         tab_data['field'][all_mask].tolist(),
                                         tab_data['scan'][all_mask].tolist(),
                                         tab_data['spw'][all_mask].tolist(),
-                                        tab_data['corr'][all_mask].tolist(),
+                                        tab_data[corr_name][all_mask].tolist(),
                                         make_casa_timestring(tab_data['time'][all_mask].tolist()))).T
 
                 # We're also going to record colors based on Scan and field
@@ -167,7 +172,7 @@ def target_summary_amptime_figure(fields, folder, show=False,
                                             for scan in scan_data])
 
                 # And corr
-                corr_data = tab_data['corr'][all_mask].tolist()
+                corr_data = tab_data[corr_name][all_mask].tolist()
 
                 colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
                                             for _ in range(len(corr_data))])
@@ -345,12 +350,17 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
 
             spw_mask = tab_data['spw'] == spw
 
+            if 'corr' in tab_data.keys():
+                corr_name = 'corr'
+            else:
+                corr_name = 'poln'
+
             if corrs is None:
-                corrs = np.unique(tab_data['corr'][spw_mask].tolist())
+                corrs = np.unique(tab_data[corr_name][spw_mask].tolist())
 
             for nc, (corr, marker) in enumerate(zip(corrs, markers)):
 
-                corr_mask = (tab_data['corr'] == corr).tolist()
+                corr_mask = (tab_data[corr_name] == corr).tolist()
 
                 all_mask = spw_mask & field_mask & corr_mask
 
@@ -358,7 +368,7 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
                                         tab_data['fieldname'][all_mask].tolist(),
                                         tab_data['field'][all_mask].tolist(),
                                         tab_data['scan'][all_mask].tolist(),
-                                        tab_data['corr'][all_mask].tolist(),
+                                        tab_data[corr_name][all_mask].tolist(),
                                         tab_data['chan'][all_mask].tolist())).T
 
                 # We're also going to record colors based on Scan and field
@@ -379,7 +389,7 @@ def target_summary_ampfreq_figure(fields, folder, show=False,
                                             for scan in scan_data])
 
                 # And corr
-                corr_data = tab_data['corr'][all_mask].tolist()
+                corr_data = tab_data[corr_name][all_mask].tolist()
 
                 colors_dict['Corr'].append([px.colors.qualitative.Safe[nc % 11]
                                             for _ in range(len(corr_data))])
