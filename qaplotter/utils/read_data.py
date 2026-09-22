@@ -1,6 +1,7 @@
 
 from astropy.table import Table, vstack
 import os
+import re
 from glob import glob
 import numpy as np
 
@@ -69,8 +70,8 @@ _LEGACY_VALUE_ALIASES = {
 def _alias_legacy_columns(tab, filename):
     '''
     No-op for anything that isn't one of the known MS-QA table types
-    (e.g. calibration-table exports, which field_plots.py doesn't touch
-    and keep their own plotms-native column names).
+    (e.g. calibration-table exports -- see `_alias_legacy_caltable_columns`
+    for those).
     '''
 
     basename = os.path.basename(filename)
@@ -82,6 +83,28 @@ def _alias_legacy_columns(tab, filename):
     for generic_col, real_name in _LEGACY_VALUE_ALIASES[tab_type].items():
         if generic_col in tab.colnames and real_name not in tab.colnames:
             tab[real_name] = tab[generic_col]
+
+    return tab
+
+
+# Calibration-table QA export filenames directly encode their axes, e.g.
+# "..finalBPcal_freq_amp_spw0.txt" or "..finaldelay_freq_delay_ant0.txt"
+# (see caltable_plots.py's make_caltable_txt in ReductionPipeline) --
+# unlike the MS-QA tables, the y-axis name doesn't need a lookup table,
+# it can be read straight out of the filename.
+_CALTABLE_FILENAME_RE = re.compile(r'_(?:freq|time)_(amp|phase|delay)_(?:spw|ant)\d+\.(?:txt|ecsv)$')
+
+
+def _alias_legacy_caltable_columns(tab, filename):
+    '''No-op for anything that isn't a calibration-table QA export.'''
+
+    match = _CALTABLE_FILENAME_RE.search(os.path.basename(filename))
+    if match is None:
+        return tab
+
+    y_name = match.group(1)
+    if 'y' in tab.colnames and y_name not in tab.colnames:
+        tab[y_name] = tab['y']
 
     return tab
 
@@ -104,6 +127,7 @@ def _read_casa_txt_plotms(filename):
                         header_start=header_start,
                         data_start=data_start)
         tab = _alias_legacy_columns(tab, filename)
+        tab = _alias_legacy_caltable_columns(tab, filename)
     except Exception as e:
         print(f"Failed reading {filename} with exception {e}.")
         tab = Table()
@@ -266,9 +290,37 @@ def read_field_data_tables(fieldname, inp_path, try_per_scan=True):
     return table_dict, meta_dict
 
 
+def _glob_caltable_ext(pattern):
+    '''
+    Glob a cal-table QA export name pattern (no extension), trying the
+    newer casatools-based ".ecsv" output before falling back to the
+    legacy plotms native ".txt" export.
+    '''
+
+    names = glob(f"{pattern}.ecsv")
+    if not names:
+        names = glob(f"{pattern}.txt")
+    return names
+
+
+def _caltable_iter_number(filename, prefix):
+    '''
+    Extract the trailing spw/antenna number from a cal-table QA export
+    filename (e.g. ".../..._spw12.ecsv" -> 12), independent of extension.
+    '''
+
+    return int(os.path.splitext(filename)[0].split(prefix)[-1])
+
+
+def _caltable_matches_iter(filename, prefix, value):
+    '''e.g. prefix="_spw", value=3 matches only "..._spw3.<ext>", not "..._spw30.<ext>".'''
+
+    return os.path.splitext(filename)[0].endswith(f"{prefix}{value}")
+
+
 def read_bpcal_data_tables(inp_path):
     '''
-    Read in the BP txt files for amp and phase.
+    Read in the BP txt/ecsv files for amp and phase.
     '''
 
     table_dict = dict()
@@ -281,13 +333,13 @@ def read_bpcal_data_tables(inp_path):
         table_dict[tab_type] = {}
         meta_dict[tab_type] = {}
 
-    amp_tab_names = glob(f"{inp_path}/*finalBPcal_freq_amp*.txt")
-    phase_tab_names = glob(f"{inp_path}/*finalBPcal_freq_phase*.txt")
+    amp_tab_names = _glob_caltable_ext(f"{inp_path}/*finalBPcal_freq_amp*")
+    phase_tab_names = _glob_caltable_ext(f"{inp_path}/*finalBPcal_freq_phase*")
 
     # If either of these return 0, try the old naming scheme:
     if len(amp_tab_names) == 0 or len(phase_tab_names) == 0:
-        amp_tab_names = glob(f"{inp_path}/*finalBPcal_amp*.txt")
-        phase_tab_names = glob(f"{inp_path}/*finalBPcal_phase*.txt")
+        amp_tab_names = _glob_caltable_ext(f"{inp_path}/*finalBPcal_amp*")
+        phase_tab_names = _glob_caltable_ext(f"{inp_path}/*finalBPcal_phase*")
 
     if len(amp_tab_names) != len(phase_tab_names):
         raise ValueError("Number of BP amp tables does not match BP phase tables.: "
@@ -295,19 +347,19 @@ def read_bpcal_data_tables(inp_path):
 
     # Sort by SPW and create a text
 
-    spw_nums = [int(tab.rstrip(".txt").split("spw")[1]) for tab in amp_tab_names]
+    spw_nums = [_caltable_iter_number(tab, "spw") for tab in amp_tab_names]
 
     for spw in spw_nums:
 
         # There aren't many to loop through.
         for amp_name in amp_tab_names:
 
-            if f"_spw{spw}.txt" in amp_name:
+            if _caltable_matches_iter(amp_name, "_spw", spw):
                 break
 
         for phase_name in phase_tab_names:
 
-            if f"_spw{spw}.txt" in phase_name:
+            if _caltable_matches_iter(phase_name, "_spw", spw):
                 break
 
         amp_out = read_casa_txt(amp_name)
@@ -322,224 +374,58 @@ def read_bpcal_data_tables(inp_path):
     return table_dict, meta_dict
 
 
-def read_delay_data_tables(inp_path):
+def _read_single_caltable_data_tables(inp_path, name_pattern, tab_type):
     '''
-    Read in the BP txt files for amp and phase.
+    Shared implementation for the delay/BPinitialgain/phaseshortgaincal/
+    ampgaincal(-time/-freq)/phasegaincal readers, which all glob one
+    name pattern and key the result by antenna number.
     '''
 
-    table_dict = dict()
-    meta_dict = dict()
+    table_dict = {tab_type: {}}
+    meta_dict = {tab_type: {}}
 
-    # Table types:
-    tab_types = ["delay"]
+    tab_names = _glob_caltable_ext(f"{inp_path}/*{name_pattern}*")
 
-    for tab_type in tab_types:
-        table_dict[tab_type] = {}
-        meta_dict[tab_type] = {}
-
-    delay_tab_names = glob(f"{inp_path}/*finaldelay_freq_delay*.txt")
-
-    # Sort by SPW and create a text
-    ant_nums = [int(tab.rstrip(".txt").split("ant")[1]) for tab in delay_tab_names]
+    ant_nums = [_caltable_iter_number(tab, "ant") for tab in tab_names]
 
     for ant in ant_nums:
 
         # There aren't many to loop through.
-        for ant_name in delay_tab_names:
+        for ant_name in tab_names:
 
-            if f"_ant{ant}.txt" in ant_name:
+            if _caltable_matches_iter(ant_name, "_ant", ant):
                 break
 
-        delay_out = read_casa_txt(ant_name)
+        out = read_casa_txt(ant_name)
 
-        table_dict['delay'][ant] = delay_out[0]
-
-        meta_dict['delay'][ant] = delay_out[1]
+        table_dict[tab_type][ant] = out[0]
+        meta_dict[tab_type][ant] = out[1]
 
     return table_dict, meta_dict
+
+
+def read_delay_data_tables(inp_path):
+    return _read_single_caltable_data_tables(inp_path, "finaldelay_freq_delay", "delay")
 
 
 def read_BPinitialgain_data_tables(inp_path):
-    '''
-    Read in the BP txt files for amp and phase.
-    '''
-
-    table_dict = dict()
-    meta_dict = dict()
-
-    # Table types:
-    tab_types = ["phase"]
-
-    for tab_type in tab_types:
-        table_dict[tab_type] = {}
-        meta_dict[tab_type] = {}
-
-    bpinitial_tab_names = glob(f"{inp_path}/*finalBPinitialgain_time_phase*.txt")
-
-    # Sort by SPW and create a text
-    ant_nums = [int(tab.rstrip(".txt").split("ant")[1]) for tab in bpinitial_tab_names]
-
-    for ant in ant_nums:
-
-        # There aren't many to loop through.
-        for ant_name in bpinitial_tab_names:
-
-            if f"_ant{ant}.txt" in ant_name:
-                break
-
-        phase_out = read_casa_txt(ant_name)
-
-        table_dict['phase'][ant] = phase_out[0]
-
-        meta_dict['phase'][ant] = phase_out[1]
-
-    return table_dict, meta_dict
+    return _read_single_caltable_data_tables(inp_path, "finalBPinitialgain_time_phase", "phase")
 
 
 def read_phaseshortgaincal_data_tables(inp_path):
-    '''
-    Read in the BP txt files for amp and phase.
-    '''
-
-    table_dict = dict()
-    meta_dict = dict()
-
-    # Table types:
-    tab_types = ["phase"]
-
-    for tab_type in tab_types:
-        table_dict[tab_type] = {}
-        meta_dict[tab_type] = {}
-
-    phaseshort_tab_names = glob(f"{inp_path}/*phaseshortgaincal_time_phase*.txt")
-
-    # Sort by SPW and create a text
-    ant_nums = [int(tab.rstrip(".txt").split("ant")[1]) for tab in phaseshort_tab_names]
-
-    for ant in ant_nums:
-
-        # There aren't many to loop through.
-        for ant_name in phaseshort_tab_names:
-
-            if f"_ant{ant}.txt" in ant_name:
-                break
-
-        phase_out = read_casa_txt(ant_name)
-
-        table_dict['phase'][ant] = phase_out[0]
-
-        meta_dict['phase'][ant] = phase_out[1]
-
-    return table_dict, meta_dict
+    return _read_single_caltable_data_tables(inp_path, "phaseshortgaincal_time_phase", "phase")
 
 
 def read_ampgaincal_time_data_tables(inp_path):
-    '''
-    Read in the BP txt files for amp and phase.
-    '''
-
-    table_dict = dict()
-    meta_dict = dict()
-
-    # Table types:
-    tab_types = ["amp"]
-
-    for tab_type in tab_types:
-        table_dict[tab_type] = {}
-        meta_dict[tab_type] = {}
-
-    ampgaincal_tab_names = glob(f"{inp_path}/*finalampgaincal_time_amp*.txt")
-
-    # Sort by SPW and create a text
-    ant_nums = [int(tab.rstrip(".txt").split("ant")[1]) for tab in ampgaincal_tab_names]
-
-    for ant in ant_nums:
-
-        # There aren't many to loop through.
-        for ant_name in ampgaincal_tab_names:
-
-            if f"_ant{ant}.txt" in ant_name:
-                break
-
-        amp_out = read_casa_txt(ant_name)
-
-        table_dict['amp'][ant] = amp_out[0]
-
-        meta_dict['amp'][ant] = amp_out[1]
-
-    return table_dict, meta_dict
+    return _read_single_caltable_data_tables(inp_path, "finalampgaincal_time_amp", "amp")
 
 
 def read_ampgaincal_freq_data_tables(inp_path):
-    '''
-    Read in the BP txt files for amp and phase.
-    '''
-
-    table_dict = dict()
-    meta_dict = dict()
-
-    # Table types:
-    tab_types = ["amp"]
-
-    for tab_type in tab_types:
-        table_dict[tab_type] = {}
-        meta_dict[tab_type] = {}
-
-    ampgaincal_tab_names = glob(f"{inp_path}/*finalampgaincal_freq_amp*.txt")
-
-    # Sort by SPW and create a text
-    ant_nums = [int(tab.rstrip(".txt").split("ant")[1]) for tab in ampgaincal_tab_names]
-
-    for ant in ant_nums:
-
-        # There aren't many to loop through.
-        for ant_name in ampgaincal_tab_names:
-
-            if f"_ant{ant}.txt" in ant_name:
-                break
-
-        amp_out = read_casa_txt(ant_name)
-
-        table_dict['amp'][ant] = amp_out[0]
-
-        meta_dict['amp'][ant] = amp_out[1]
-
-    return table_dict, meta_dict
+    return _read_single_caltable_data_tables(inp_path, "finalampgaincal_freq_amp", "amp")
 
 
 def read_phasegaincal_data_tables(inp_path):
-    '''
-    Read in the BP txt files for amp and phase.
-    '''
-
-    table_dict = dict()
-    meta_dict = dict()
-
-    # Table types:
-    tab_types = ["phase"]
-
-    for tab_type in tab_types:
-        table_dict[tab_type] = {}
-        meta_dict[tab_type] = {}
-
-    phaseshort_tab_names = glob(f"{inp_path}/*finalphasegaincal_time_phase*.txt")
-
-    # Sort by SPW and create a text
-    ant_nums = [int(tab.rstrip(".txt").split("ant")[1]) for tab in phaseshort_tab_names]
-
-    for ant in ant_nums:
-
-        # There aren't many to loop through.
-        for ant_name in phaseshort_tab_names:
-
-            if f"_ant{ant}.txt" in ant_name:
-                break
-
-        phase_out = read_casa_txt(ant_name)
-
-        table_dict['phase'][ant] = phase_out[0]
-
-        meta_dict['phase'][ant] = phase_out[1]
+    return _read_single_caltable_data_tables(inp_path, "finalphasegaincal_time_phase", "phase")
 
     return table_dict, meta_dict
 

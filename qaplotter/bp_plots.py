@@ -13,8 +13,8 @@ def bp_amp_phase_figures(table_dict, meta_dict,
     '''
 
     # There should be 2 fields:
-    exp_keys = {'amp': {'x': 'freq', 'y': 'y'},
-                'phase': {'x': 'freq', 'y': 'y'}}
+    exp_keys = {'amp': {'x': 'freq', 'y': 'amp'},
+                'phase': {'x': 'freq', 'y': 'phase'}}
 
     hovertemplate = 'Scan: %{customdata[0]}<br>SPW: %{customdata[1]}<br>Chan: %{customdata[2]}<br>Freq: %{customdata[3]}<br>Corr: %{customdata[4]}<br>Ant1: %{customdata[5]}<br>Ant2: %{customdata[6]}'
 

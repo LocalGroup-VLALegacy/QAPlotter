@@ -24,7 +24,7 @@ def phase_gain_figures(table_dict, meta_dict,
     3. BPinitialgain
     '''
 
-    exp_keys = {'phase': {'x': 'time', 'y': 'y'}}
+    exp_keys = {'phase': {'x': 'time', 'y': 'phase'}}
     xlabel='Time'
     ylabel='Phase'
 
@@ -218,7 +218,7 @@ def amp_gain_time_figures(table_dict, meta_dict,
     on total # of ants vs. # ants per figure (default is 4).
     '''
 
-    exp_keys = {'amp': {'x': 'time', 'y': 'y'}}
+    exp_keys = {'amp': {'x': 'time', 'y': 'amp'}}
     xlabel='Time'
     ylabel='Amplitude'
 
@@ -257,10 +257,10 @@ def amp_gain_time_figures(table_dict, meta_dict,
     for ant_num in ant_nums:
         tab_data = table_dict[list(exp_keys.keys())[0]][ant_num]
 
-        if len(tab_data['y']) == 0:
+        if len(tab_data[keyname]) == 0:
             continue
 
-        this_max_value = np.nanmax(tab_data['y'])
+        this_max_value = np.nanmax(tab_data[keyname])
         if max_value < this_max_value:
             max_value = this_max_value
 
@@ -422,7 +422,7 @@ def delay_freq_figures(table_dict, meta_dict,
     on total # of ants vs. # ants per figure (default is 4).
     '''
 
-    exp_keys = {'delay': {'x': 'freq', 'y': 'y'}}
+    exp_keys = {'delay': {'x': 'freq', 'y': 'delay'}}
     xlabel='Frequency (GHz)'
     ylabel='Delay (ns)'
 
@@ -461,14 +461,14 @@ def delay_freq_figures(table_dict, meta_dict,
     for ant_num in ant_nums:
         tab_data = table_dict[list(exp_keys.keys())[0]][ant_num]
 
-        if len(tab_data['y']) == 0:
+        if len(tab_data[keyname]) == 0:
             continue
 
-        this_max_value = np.nanmax(tab_data['y'])
+        this_max_value = np.nanmax(tab_data[keyname])
         if max_value < this_max_value:
             max_value = this_max_value
 
-        this_min_value = np.nanmin(tab_data['y'])
+        this_min_value = np.nanmin(tab_data[keyname])
         if min_value > this_min_value:
             min_value = this_min_value
 
@@ -621,7 +621,7 @@ def amp_gain_freq_figures(table_dict, meta_dict,
     on total # of ants vs. # ants per figure (default is 4).
     '''
 
-    exp_keys = {'amp': {'x': 'freq', 'y': 'y'}}
+    exp_keys = {'amp': {'x': 'freq', 'y': 'amp'}}
     xlabel='Frequency (GHz)'
     ylabel='Amplitude'
 
@@ -660,10 +660,10 @@ def amp_gain_freq_figures(table_dict, meta_dict,
     for ant_num in ant_nums:
         tab_data = table_dict[list(exp_keys.keys())[0]][ant_num]
 
-        if len(tab_data['y']) == 0:
+        if len(tab_data[keyname]) == 0:
             continue
 
-        this_max_value = np.nanmax(tab_data['y'])
+        this_max_value = np.nanmax(tab_data[keyname])
         if max_value < this_max_value:
             max_value = this_max_value
 
