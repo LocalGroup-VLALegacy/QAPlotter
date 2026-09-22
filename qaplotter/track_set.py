@@ -304,17 +304,19 @@ def make_all_cal_plots(flagging_sheet_link, folder, output_folder):
 def make_all_quicklook_plots(flagging_sheet_link, folder="quicklook_imaging",
                              output_folder="quicklook_imaging_figures"):
 
-    # Generate the quicklook plots.
+    # Generate the quicklook plots. A single folder can contain both
+    # continuum and spectral line images; these are detected and handled
+    # separately internally.
     target_dict, summary_filenames = make_quicklook_figures(folder, output_folder)
 
     # Identify if these are continuum or line plots
     # The line plots will tend to be larger, so we just want to
-    # decrease the number of fields per page for the lines.
+    # decrease the number of fields per page whenever line plots are present.
     filenames = glob(f"{output_folder}/*.html")
-    if any(["continuum" in filename for filename in filenames]):
-        fields_per_page = 5
-    else:
+    if any(["-lines-" in filename for filename in filenames]):
         fields_per_page = 3
+    else:
+        fields_per_page = 5
 
     make_quicklook_html_links(flagging_sheet_link, output_folder, target_dict,
                               summary_filenames,

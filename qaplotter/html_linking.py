@@ -729,13 +729,22 @@ def make_index_quicklook_html_page(flagging_sheet_link, target_list_split, summa
     # Add in MS info:
     html_string += '<div class="content" id="basic">\n'
 
-    html_string += f'   <h2>Field/SPW Outliers</h2>\n'
+    # summary_filenames is grouped in triplets of (outliers, spw-summary,
+    # field-summary), one triplet per data type present (continuum and/or
+    # lines).
+    for i in range(0, len(summary_filenames), 3):
 
-    # Include the summary plots
-    html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_filenames[0]}" height="800" width="100%"></iframe>\n'
+        outliers_fn, spw_fn, field_fn = summary_filenames[i:i + 3]
 
-    html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_filenames[1]}" height="1000" width="100%"></iframe>\n'
-    html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{summary_filenames[2]}" height="1000" width="100%"></iframe>\n'
+        type_tag = outliers_fn.replace('quicklook-', '').replace('-summary-outliers.html', '')
+
+        html_string += f'   <h2>Field/SPW Outliers ({type_tag})</h2>\n'
+
+        # Include the summary plots
+        html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{outliers_fn}" height="800" width="100%"></iframe>\n'
+
+        html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{spw_fn}" height="1000" width="100%"></iframe>\n'
+        html_string += f'    <iframe id="igraph" scrolling="yes" style="border:none;" seamless="seamless" src="{field_fn}" height="1000" width="100%"></iframe>\n'
 
     html_string += '</div>\n\n'
 

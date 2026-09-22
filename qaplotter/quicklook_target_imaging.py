@@ -14,60 +14,87 @@ from spectral_cube.utils import StokesWarning
 
 
 def make_quicklook_figures(foldername, output_foldername, suffix='image'):
+    '''
+    A single quicklook imaging folder can contain both continuum and
+    spectral line images (e.g., continuum SPWs alongside HI/OH/Hnalpha
+    line SPWs). Continuum and line images are handled separately -- each
+    type gets its own per-target figures and noise summaries -- since
+    they need different figure layouts (facet grid vs. channel animation).
+    '''
 
     if not os.path.exists(output_foldername):
         os.mkdir(output_foldername)
 
-    data_dict, data0_shape = load_quicklook_images(foldername, suffix=suffix)
+    data_dict_bytype = load_quicklook_images(foldername, suffix=suffix)
 
-    # Check if we have line or continuum data based on the cube shape.
-    # NOTE: this assumes we have not mixed continuum and lines.
-    is_line = data0_shape[0] > 1
-    type_tag = "lines" if is_line else "continuum"
+    # Only tag target names with the data type when both continuum and line
+    # data are present. This keeps names unchanged for the common case of a
+    # folder with just one type of data.
+    active_types = [type_tag for type_tag in ('continuum', 'lines')
+                    if len(data_dict_bytype[type_tag]) > 0]
+    tag_targets = len(active_types) > 1
 
     targetname_dict = {}
+    summary_filenames = []
 
-    for target in data_dict:
+    for type_tag in active_types:
 
-        target_dict = data_dict[target]
+        data_dict = data_dict_bytype[type_tag]
+        is_line = type_tag == 'lines'
+
+        for target in data_dict:
+
+            target_dict = data_dict[target]
+
+            if is_line:
+                fig = make_quicklook_lines_figure(target_dict, target)
+            else:
+                fig = make_quicklook_continuum_figure(target_dict, target)
+
+            out_html_name = f"quicklook-{target}-{type_tag}-plotly_interactive.html"
+            fig.write_html(f"{output_foldername}/{out_html_name}")
+
+            target_key = f"{target}_{type_tag}" if tag_targets else target
+            targetname_dict[target_key] = out_html_name
 
         if is_line:
-            fig = make_quicklook_lines_figure(target_dict, target)
+            fig_summ1, fig_summ2, df, df_outliers = \
+                make_quicklook_lines_noise_summary(data_dict)
         else:
-            fig = make_quicklook_continuum_figure(target_dict, target)
+            fig_summ1, fig_summ2, df, df_outliers = \
+                make_quicklook_continuum_noise_summary(data_dict)
 
-        out_html_name = f"quicklook-{target}-{type_tag}-plotly_interactive.html"
-        fig.write_html(f"{output_foldername}/{out_html_name}")
+        out_html_name1 = f"quicklook-{type_tag}-summary-spw-plotly_interactive.html"
+        fig_summ1.write_html(f"{output_foldername}/{out_html_name1}")
 
-        targetname_dict[target] = out_html_name
+        out_html_name2 = f"quicklook-{type_tag}-summary-field-plotly_interactive.html"
+        fig_summ2.write_html(f"{output_foldername}/{out_html_name2}")
 
-    if is_line:
-        fig_summ1, fig_summ2, df, df_outliers = \
-            make_quicklook_lines_noise_summary(data_dict)
-    else:
-        fig_summ1, fig_summ2, df, df_outliers = \
-            make_quicklook_continuum_noise_summary(data_dict)
+        out_html_outliername1 = f"quicklook-{type_tag}-summary-outliers.html"
+        with open(f"{output_foldername}/{out_html_outliername1}", 'w') as fo:
+            df_outliers.to_html(fo)
 
-    out_html_name1 = f"quicklook-{type_tag}-summary-spw-plotly_interactive.html"
-    fig_summ1.write_html(f"{output_foldername}/{out_html_name1}")
-
-    out_html_name2 = f"quicklook-{type_tag}-summary-field-plotly_interactive.html"
-    fig_summ2.write_html(f"{output_foldername}/{out_html_name2}")
-
-    out_html_outliername1 = f"quicklook-{type_tag}-summary-outliers.html"
-    with open(f"{output_foldername}/{out_html_outliername1}", 'w') as fo:
-        df_outliers.to_html(fo)
-
-    summary_filenames = [out_html_outliername1,
-                         out_html_name1,
-                         out_html_name2]
+        summary_filenames.extend([out_html_outliername1,
+                                  out_html_name1,
+                                  out_html_name2])
 
     return targetname_dict, summary_filenames
 
 
 def load_quicklook_images(foldername, suffix='image'):
     '''
-    Split by target and SPW.
+    Split by data type (continuum vs. spectral line), target, and SPW.
+
+    The image type is identified from the filename tag (the name format is
+    quicklook-FIELD-spwNUM-LINE/CONT-MSNAME): images tagged "continuum" are
+    continuum images, everything else (e.g. "HI", "H166a", "OH1667") is a
+    spectral line image. A single folder can contain both.
+
+    Returns
+    -------
+    data_dict : dict
+        ``data_dict[type_tag][target][spw_label] = [line, cubename]``, where
+        ``type_tag`` is one of "continuum" or "lines".
     '''
 
     # Gather the requested files:
@@ -80,13 +107,9 @@ def load_quicklook_images(foldername, suffix='image'):
     # The name format is quicklook-FIELD-spwNUM-LINE/CONT-MSNAME
     target_names = list(set([cubename.split('-')[1] for cubename in all_cubenames]))
 
-    data_dict = {}
-
-    data_shape = None
+    data_dict = {'continuum': {}, 'lines': {}}
 
     for jj, target in enumerate(target_names):
-
-        data_dict[target] = {}
 
         target_cubenames = [cubename for cubename in all_cubenames if f'{target}-' in cubename]
 
@@ -98,21 +121,13 @@ def load_quicklook_images(foldername, suffix='image'):
         # So we'll label with strings and iterate through multiples for keys.
 
         for ii, (spw, line, cubename) in enumerate(zip(spw_nums, line_names, target_cubenames)):
-            # NOTE: this is OK because the continuum images still have 3 dimensions.
-            # This works for now, but spectral-cube may eventually change
 
-            # Read in single cubes until we get a valid shape out.
-            # This is just to check continuum vs. spectral line.
-            if data_shape is None:
-                data0 = read_data(target_cubenames[ii])
+            type_tag = 'continuum' if line.lower() == 'continuum' else 'lines'
 
-                if data0 is not None:
-                    data_shape = data0.shape
-
-                    del data0
+            this_target_dict = data_dict[type_tag].setdefault(target, {})
 
             # Make dict label
-            current_keys = list(data_dict[target].keys())
+            current_keys = list(this_target_dict.keys())
             i = 0
             while True:
                 spw_label = f"{spw}_{i}"
@@ -121,9 +136,9 @@ def load_quicklook_images(foldername, suffix='image'):
                 else:
                     break
 
-            data_dict[target][spw_label] = [line, cubename]
+            this_target_dict[spw_label] = [line, cubename]
 
-    return data_dict, data_shape
+    return data_dict
 
 
 def read_data(cubename):
@@ -226,9 +241,15 @@ def make_quicklook_continuum_figure(data_dict, target_name):
 
     facet_col_wrap = 5
 
+    # The 2-line annotation above each panel (SPW/freq range, rms) needs a
+    # row gap large enough not to overlap the row above. Keep the column
+    # gap minimal since there's no text between panels horizontally.
+    facet_col_spacing = 0.01
+    facet_row_spacing = 0.07
+
     fig = px.imshow(data, facet_col=-1, facet_col_wrap=facet_col_wrap,
-                    facet_col_spacing=0.01,
-                    facet_row_spacing=0.04, origin='lower',
+                    facet_col_spacing=facet_col_spacing,
+                    facet_row_spacing=facet_row_spacing, origin='lower',
                     color_continuous_scale='gray_r',
                     range_color=[low_val, high_val],
                     binary_string=True, binary_compression_level=5)
@@ -273,11 +294,19 @@ def make_quicklook_continuum_figure(data_dict, target_name):
         freq_min = np.round(freq0 - del_freq * 0.5, 2).value
         freq_max = np.round(freq0 + del_freq * 0.5, 2).value
 
-        fig.layout.annotations[index]['text'] = f"SPW {spw} ({freq_min}-{freq_max} GHz)<br>rms={rms_approx}"
+        fig.layout.annotations[index]['text'] = f"SPW {spw} ({freq_min}-{freq_max} GHz)<br>rms={rms_approx.value:.2f} {rms_approx.unit}"
+
+    # Give each row enough vertical room for its panel image plus the
+    # 2-line annotation above it, and scale the total figure height with
+    # the number of rows so more rows don't just squeeze existing ones.
+    # The extra margin covers the top row's annotation, which would
+    # otherwise overlap the figure title.
+    fig.update_layout(autosize=True,
+                      height=240 * nrows + 240,)
 
     fig.update_layout(
         title=target_name,
-        margin=dict(t=100, pad=4),
+        margin=dict(t=140, pad=4),
         font=dict(family="Courier New, monospace",
                   size=15,
                   color="#7f7f7f")
@@ -373,24 +402,56 @@ def make_quicklook_lines_figure(data_dict, target_name):
 
     data = np.stack(data_array)
 
+    n_panels = data.shape[0]
+
     # Strip units if present
     noise_rms = noise_rms.value if hasattr(noise_rms, 'unit') else noise_rms
     high_val = high_val.value if hasattr(high_val, 'unit') else high_val
 
     low_val = -2 * noise_rms
 
-    fig = px.imshow(data, animation_frame=1, facet_col=0,
+    # Wrap the SPW panels across up to 3 rows instead of a single wide row.
+    facet_col_wrap = int(np.ceil(n_panels / 3))
+
+    # Each panel's 3-line annotation (SPW/line, rms, channel width) sits
+    # above its image, so the row gap needs to be large enough to hold it
+    # without overlapping the row above. Keep the column gap minimal since
+    # there's no text between panels horizontally.
+    facet_col_spacing = 0.01
+    facet_row_spacing = 0.1
+
+    fig = px.imshow(data, animation_frame=1, facet_col=0, facet_col_wrap=facet_col_wrap,
+                    facet_col_spacing=facet_col_spacing, facet_row_spacing=facet_row_spacing,
                     labels=dict(animation_frame="Channel"),
                     origin='lower', color_continuous_scale='gray_r',
                     range_color=[low_val, high_val],
                     binary_string=True, binary_compression_level=5)
 
-    i = 0
-    for spw_label in spw_keys_ordered:
+    # NOTE: as with the continuum figure, plotly's facet ordering with
+    # facet_col_wrap doesn't match the panel order in `data`, so we need to
+    # remap indices to match the annotations to the correct panel.
+    ncols = facet_col_wrap
+    nrows = (
+        n_panels // ncols + 1
+        if n_panels % ncols
+        else n_panels // ncols
+    )
 
-        # Check if the data was OK and we were able to load it in.
-        if not valid_data[spw_label]:
-            continue
+    fig_order = np.arange(ncols * nrows)[::-1].reshape((nrows, ncols))[:, ::-1]
+    oned_order = fig_order.ravel()
+    oned_order = oned_order[oned_order < n_panels]
+
+    spw_keys_ordered = [spw for spw in spw_keys_ordered if valid_data[spw]]
+
+    # These should now be the same shape
+    assert len(oned_order) == len(spw_keys_ordered)
+
+    for index in range(n_panels):
+
+        # Get position in data from the 1D ordering
+        idx = oned_order[index]
+
+        spw_label = spw_keys_ordered[idx]
 
         spw = spw_label.split("_")[0]
 
@@ -399,9 +460,7 @@ def make_quicklook_lines_figure(data_dict, target_name):
         rms_approx = data_info[spw_label][0]
         chan_width = data_info[spw_label][1]
 
-        fig.layout.annotations[i]['text'] = f"SPW {spw} ({line_label})<br>rms={rms_approx}<br>in {chan_width} channels"
-
-        i += 1
+        fig.layout.annotations[index]['text'] = f"SPW {spw} ({line_label})<br>rms={rms_approx.value:.2f} {rms_approx.unit}<br>in {chan_width} channels"
 
     # Velocity steps
     for step in fig.layout['sliders'][0]['steps']:
@@ -410,12 +469,17 @@ def make_quicklook_lines_figure(data_dict, target_name):
         # Update the label to include the velocity:
         step.label = f"{chan_num} ({np.round(spectral_axis[chan_num], 1)})"
 
+    # Give each row enough vertical room for its panel image plus the
+    # 3-line annotation above it, and scale the total figure height with
+    # the number of rows so more rows don't just squeeze existing ones.
+    # The extra +60 (folded into the top margin below) covers the top
+    # row's annotation, which would otherwise overlap the figure title.
     fig.update_layout(autosize=True,
-                      height=600,)
+                      height=280 * nrows + 280,)
 
     fig.update_layout(
         title=target_name,
-        margin=dict(t=100, pad=4),
+        margin=dict(t=160, pad=4),
         font=dict(family="Courier New, monospace",
                   size=15,
                   color="#7f7f7f")
