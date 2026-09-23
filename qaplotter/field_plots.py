@@ -217,13 +217,18 @@ def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
     unavoidable here since QAPlotter has no MS access to do better.
 
     Drawn as Scattergl traces (fill='toself' for the band, lines+markers
-    for the hoverable edges) rather than `add_vrect`/`add_shape`: shapes
-    are SVG and plotly.js composites the WebGL canvas used by the
-    Scattergl data traces above the SVG shape layer regardless of the
-    shape's declared `layer`, so a shape here would render invisibly
-    underneath the (often very dense) data points. Scattergl traces added
-    after the data traces draw on top of them within that same WebGL
-    layer, same as any other trace order.
+    for the hoverable edges), matching the data traces' rendering so
+    z-order follows normal trace-insertion order. A protected velocity
+    window is typically a few hundred kHz wide -- under a percent of the
+    panel's full multi-SPW frequency range -- so the *fill* is often
+    sub-pixel and effectively invisible at that zoomed-out view (this
+    isn't a rendering bug, just geometry: confirmed by rendering the
+    real figure with kaleido). The boundary lines are the reliable,
+    always-visible marker regardless of zoom (bold, solid, high-contrast,
+    and padded well past the data's y-range so they poke out above/below
+    the point cloud); the shaded fill becomes clearly visible once a
+    viewer zooms in on that specific line, which is normal, expected use
+    of an interactive plot.
     '''
 
     if len(velocity_rows) == 0:
@@ -234,7 +239,7 @@ def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
     if len(finite) == 0:
         return
     y_lo, y_hi = float(finite.min()), float(finite.max())
-    pad = 0.05 * (y_hi - y_lo) if y_hi > y_lo else 1.0
+    pad = 0.15 * (y_hi - y_lo) if y_hi > y_lo else 1.0
     y_lo, y_hi = y_lo - pad, y_hi + pad
     y_line = np.linspace(y_lo, y_hi, 5)
 
@@ -259,9 +264,8 @@ def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
         for freq, vel in ((freq_at_vlow, vel_row['vlow_kms']), (freq_at_vhigh, vel_row['vhigh_kms'])):
             fig.append_trace(go.Scattergl(
                 x=[freq] * len(y_line), y=y_line,
-                mode='lines+markers',
-                line=dict(color='dimgray', width=1.5, dash='dot'),
-                marker=dict(size=3, color='dimgray'),
+                mode='lines',
+                line=dict(color='black', width=2.5),
                 hovertemplate=(f"Line: {vel_row['line']}<br>"
                               f"Freq: {freq:.6f} GHz<br>"
                               f"Velocity: {vel:.1f} km/s<extra></extra>"),
