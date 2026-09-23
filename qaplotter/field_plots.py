@@ -278,14 +278,23 @@ def target_scan_figure(table_dict, meta_dict, show=False,
                        corrs=['RR', 'LL'],
                        spw_dict=None,
                        show_linesonly=False,
+                       continuum_only=False,
                        telescope='vla',
                        velocity_table=None):
     '''
     Make a 3-panel figure for target scans.
 
+    `show_linesonly` and `continuum_only` are mutually exclusive SPW
+    filters (both need `spw_dict` to classify SPWs by their label; with
+    neither set, or without `spw_dict`, every SPW present in the data is
+    shown together). `make_field_plots` uses these to produce two
+    separate figures per target -- a line-SPW view and a continuum-only
+    view -- rather than one figure mixing both.
+
     `velocity_table`, if given (see `qaplotter.utils.load_velocity_table`),
     shades the protected velocity range of each spectral line identified
-    for this target on the Amp vs. Freq panel.
+    for this target on the Amp vs. Freq panel. Meaningless for a
+    continuum-only figure -- pass velocity_table=None there.
     '''
 
     exp_keys = ['amp_chan', 'amp_time', 'amp_uvdist']
@@ -300,26 +309,19 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
 
-    # When requested, show lines only for mixed continuum/line data sets.
-    # SPWs are defined by their name when the spw_dict is passed.
-    # Lines do not have "continuum" in their name.
+    # SPWs are classified as continuum or line by their spw_dict label
+    # ("continuum" is only ever in a continuum SPW's label).
     spw_labels = {}
     if spw_dict is not None:
         for key in spw_dict:
-            if "continuum" in spw_dict[key]['label']:
-                continue
             spw_labels[key] = spw_dict[key]['label']
 
-    if show_linesonly and spw_dict is not None:
-        line_spw_nums = []
-        for key in spw_dict:
-            if "continuum" in spw_dict[key]['label']:
-                continue
-            if not key in spw_nums:
-                continue
-            line_spw_nums.append(key)
-
-        spw_nums = line_spw_nums
+    if continuum_only and spw_dict is not None:
+        spw_nums = [key for key in spw_dict
+                   if "continuum" in spw_dict[key]['label'] and key in spw_nums]
+    elif show_linesonly and spw_dict is not None:
+        spw_nums = [key for key in spw_dict
+                   if "continuum" not in spw_dict[key]['label'] and key in spw_nums]
 
     colors_dict = _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs,
                                    spw_labels, lambda key: row_col[key], telescope,

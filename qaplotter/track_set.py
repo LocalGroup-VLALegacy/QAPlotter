@@ -112,6 +112,28 @@ def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
                                      show_linesonly=show_target_linesonly,
                                      velocity_table=velocity_table)
 
+            # A separate continuum-only view (no line-spw data, no
+            # velocity shading -- that's only meaningful for the line
+            # SPWs). Only made when this target actually has continuum
+            # SPW data, so a line-only track/target doesn't get a blank
+            # page; mirrors quicklook imaging's per-type figure split.
+            has_continuum_data = spw_dict is not None and any(
+                "continuum" in spw_dict[spw]['label']
+                for spw in np.unique(table_dict['amp_chan']['spw'].tolist())
+                if spw in spw_dict)
+
+            if has_continuum_data:
+                fig_cont = target_scan_figure(table_dict, meta_dict, show=False, corrs=corrs,
+                                              spw_dict=spw_dict,
+                                              continuum_only=True,
+                                              velocity_table=None)
+
+                cont_field_key = f"{field}_continuum"
+                field_intents[cont_field_key] = f"{field_intent} (continuum)"
+
+                out_html_name = f"{cont_field_key}_plotly_interactive.html"
+                fig_cont.write_html(f"{output_folder}/{out_html_name}")
+
         # 10 with amp/phase versus ant 1. 8 without.
         elif len(table_dict.keys()) == 10 or len(table_dict.keys()) == 8:
 
