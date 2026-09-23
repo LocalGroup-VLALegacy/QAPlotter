@@ -248,7 +248,9 @@ def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows, line_to_s
         return
     y_lo, y_hi = float(finite.min()), float(finite.max())
     pad = 0.15 * (y_hi - y_lo) if y_hi > y_lo else 1.0
-    y_lo, y_hi = y_lo - pad, y_hi + pad
+    # Amplitude is never negative -- don't pad below 0, so the shading
+    # doesn't force the y-axis to autorange into negative territory.
+    y_lo, y_hi = max(0.0, y_lo - pad), y_hi + pad
     y_line = np.linspace(y_lo, y_hi, 5)
 
     for vel_row in velocity_rows:
