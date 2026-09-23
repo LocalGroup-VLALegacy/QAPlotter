@@ -43,8 +43,9 @@ def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
     Make all scan plots into an HTML for each target.
     '''
 
-    # Grab all text files.
-    txt_files = glob(f"{folder}/*.txt")
+    # Grab all data files -- both the legacy plotms ".txt" export and the
+    # newer casatools-based ".ecsv" export may be present.
+    txt_files = glob(f"{folder}/*.txt") + glob(f"{folder}/*.ecsv")
 
     # Make output folder if it doesn't exist
     if not os.path.exists(output_folder):
@@ -55,8 +56,15 @@ def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
             return "_".join(os.path.basename(filename).split("_")[1:-3])
         return "_".join(os.path.basename(filename).split("_")[1:-2])
 
+    # A ".ecsv" file always carries a non-trivial YAML header even when
+    # it has very little data (unlike a near-empty plotms ".txt" export,
+    # which the size floor below is meant to catch), so use a smaller
+    # floor for it.
+    def _min_size(filename):
+        return 200 if filename.endswith('.ecsv') else 1000
+
     fieldnames = [get_fieldname(filename) for filename in txt_files
-                  if os.path.getsize(filename) > 1000]
+                  if os.path.getsize(filename) > _min_size(filename)]
 
     # Get unique names only
     fieldnames = sorted(list(set(fieldnames)))
