@@ -14,7 +14,8 @@ from .utils import (read_field_data_tables,
                     read_ampgaincal_time_data_tables,
                     read_ampgaincal_freq_data_tables,
                     read_phasegaincal_data_tables,
-                    load_spwdict)
+                    load_spwdict,
+                    load_velocity_table)
 
 from .parse_weblog import (get_field_intents,
                            extract_manual_flagging_log,
@@ -38,9 +39,14 @@ from .html_linking import (make_all_html_links, make_html_homepage,
 
 def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
                      flagging_sheet_link=None, corrs=['RR', 'LL'],
-                     spw_dict=None, show_target_linesonly=True):
+                     spw_dict=None, show_target_linesonly=True,
+                     velocity_table=None):
     '''
     Make all scan plots into an HTML for each target.
+
+    `velocity_table`, if given, shades each target's identified spectral
+    line velocity range(s) on the Amp vs. Freq panel of its scan figure
+    (see `qaplotter.utils.load_velocity_table`).
     '''
 
     # Grab all data files -- both the legacy plotms ".txt" export and the
@@ -103,7 +109,8 @@ def make_field_plots(msname, folder, output_folder, save_fieldnames=False,
 
             fig = target_scan_figure(table_dict, meta_dict, show=False, corrs=corrs,
                                      spw_dict=spw_dict,
-                                     show_linesonly=show_target_linesonly)
+                                     show_linesonly=show_target_linesonly,
+                                     velocity_table=velocity_table)
 
         # 10 with amp/phase versus ant 1. 8 without.
         elif len(table_dict.keys()) == 10 or len(table_dict.keys()) == 8:
@@ -344,6 +351,7 @@ def make_all_plots(msname=None,
                    corrs=['RR', 'LL'],
                    manualflag_tablename='manualflag_check.html',
                    spwdict_filename="spw_definitions.npy",
+                   velocity_table_filename="target_velocity_ranges.ecsv",
                    show_target_linesonly=True,
                    ):
     '''
@@ -415,6 +423,15 @@ def make_all_plots(msname=None,
         spw_dict = None
         print(f"NO spw dictionary file found.")
 
+    # Optional: per-target spectral-line velocity ranges, used to shade
+    # the protected velocity range on the target Amp vs. Freq panel.
+    if os.path.exists(velocity_table_filename):
+        print(f"Found target velocity range file.")
+        velocity_table = load_velocity_table(velocity_table_filename)
+    else:
+        velocity_table = None
+        print(f"NO target velocity range file found.")
+
     make_html_homepage(".", ms_info_dict, flagging_sheet_link=flagging_sheet_link,
                        manualflag_tablename=manualflag_tablename)
 
@@ -434,7 +451,8 @@ def make_all_plots(msname=None,
                      save_fieldnames=save_fieldnames,
                      corrs=corrs, spw_dict=spw_dict,
                      flagging_sheet_link=flagging_sheet_link,
-                     show_target_linesonly=show_target_linesonly)
+                     show_target_linesonly=show_target_linesonly,
+                     velocity_table=velocity_table)
 
     # For older pipeline runs, only the BP txt files will be available.
     if not os.path.exists(folder_cals):

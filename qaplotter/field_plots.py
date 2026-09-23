@@ -4,7 +4,9 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
 
-from .utils import telescope_time_conversion
+from .utils import telescope_time_conversion, velocity_rows_for_field
+
+_C_KMS = 299792458.0 / 1000.
 
 # Define a common set of markers to plot for different correlations
 # e.g. RR, LL, RL, LR
@@ -197,14 +199,73 @@ def _add_color_buttons(fig, colors_dict):
     fig.update_layout(updatemenus=[updatemenus], margin=dict(t=150))
 
 
+def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
+    '''
+    Shade the protected velocity range for each identified spectral line
+    on a chan/freq-axis panel: a gray band between the low/high edges,
+    plus a hoverable vertical line at each edge showing its frequency and
+    Doppler velocity. A line with more than one disjoint velocity window,
+    or an SPW with more than one identified line (e.g. the OH 1665/1667
+    satellite lines both landing in the same window), gets one band per
+    row of `velocity_rows` -- so those show up as two separate bands.
+
+    Frequencies are computed with the plain radio-convention Doppler
+    formula against the SPECTRAL_WINDOW frame the 'freq' column is
+    already in (TOPO, typically); this is the same LSRK-vs-TOPO
+    approximation already accepted elsewhere in ReductionPipeline (at
+    most ~30 km/s against SPW bandwidths of several MHz or more), and is
+    unavoidable here since QAPlotter has no MS access to do better.
+    '''
+
+    if len(velocity_rows) == 0:
+        return
+
+    amp = np.asarray(tab_data['amp'])
+    finite = amp[np.isfinite(amp)]
+    if len(finite) == 0:
+        return
+    y_lo, y_hi = float(finite.min()), float(finite.max())
+    pad = 0.05 * (y_hi - y_lo) if y_hi > y_lo else 1.0
+    y_lo, y_hi = y_lo - pad, y_hi + pad
+    y_line = np.linspace(y_lo, y_hi, 5)
+
+    for vel_row in velocity_rows:
+
+        restfreq = float(vel_row['restfreq_GHz'])
+        # Higher velocity -> lower observed frequency (radio convention),
+        # same formula as ReductionPipeline's lines_rest2obs.
+        freq_at_vlow = restfreq * (1 - float(vel_row['vlow_kms']) / _C_KMS)
+        freq_at_vhigh = restfreq * (1 - float(vel_row['vhigh_kms']) / _C_KMS)
+
+        fig.add_vrect(x0=min(freq_at_vlow, freq_at_vhigh), x1=max(freq_at_vlow, freq_at_vhigh),
+                      row=row, col=col, fillcolor='gray', opacity=0.25, line_width=0)
+
+        for freq, vel in ((freq_at_vlow, vel_row['vlow_kms']), (freq_at_vhigh, vel_row['vhigh_kms'])):
+            fig.append_trace(go.Scatter(
+                x=[freq] * len(y_line), y=y_line,
+                mode='lines+markers',
+                line=dict(color='dimgray', width=1.5, dash='dot'),
+                marker=dict(size=3, color='dimgray'),
+                hovertemplate=(f"Line: {vel_row['line']}<br>"
+                              f"Freq: {freq:.6f} GHz<br>"
+                              f"Velocity: {vel:.1f} km/s<extra></extra>"),
+                showlegend=False,
+            ), row=row, col=col)
+
+
 def target_scan_figure(table_dict, meta_dict, show=False,
                        scatter_plot=go.Scattergl,
                        corrs=['RR', 'LL'],
                        spw_dict=None,
                        show_linesonly=False,
-                       telescope='vla'):
+                       telescope='vla',
+                       velocity_table=None):
     '''
     Make a 3-panel figure for target scans.
+
+    `velocity_table`, if given (see `qaplotter.utils.load_velocity_table`),
+    shades the protected velocity range of each spectral line identified
+    for this target on the Amp vs. Freq panel.
     '''
 
     exp_keys = ['amp_chan', 'amp_time', 'amp_uvdist']
@@ -243,6 +304,13 @@ def target_scan_figure(table_dict, meta_dict, show=False,
     colors_dict = _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs,
                                    spw_labels, lambda key: row_col[key], telescope,
                                    first_trace_flag=lambda nn, nspw, nc: (nn == 0 and nc == 0))
+
+    if velocity_table is not None and len(velocity_table) > 0:
+        field_name = meta_dict['amp_time']['field']
+        matching_rows = velocity_rows_for_field(velocity_table, field_name)
+        if len(matching_rows) > 0:
+            row, col = row_col['amp_chan']
+            _add_line_velocity_shading(fig, row, col, table_dict['amp_chan'], matching_rows)
 
     fig.update_xaxes(rangeslider_visible=False,
                      tickformatstops=[dict(dtickrange=[None, 1000e3], value="%H:%M:%S"),
