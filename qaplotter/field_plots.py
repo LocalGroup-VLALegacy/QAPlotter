@@ -199,7 +199,7 @@ def _add_color_buttons(fig, colors_dict):
     fig.update_layout(updatemenus=[updatemenus], margin=dict(t=150))
 
 
-def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
+def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows, line_to_spw):
     '''
     Shade the protected velocity range for each identified spectral line
     on a chan/freq-axis panel: a gray band between the low/high edges,
@@ -208,6 +208,14 @@ def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
     or an SPW with more than one identified line (e.g. the OH 1665/1667
     satellite lines both landing in the same window), gets one band per
     row of `velocity_rows` -- so those show up as two separate bands.
+
+    `line_to_spw` (line name -> list of spw ids, from `spw_dict`) ties
+    each band to the same `legendgroup` as its SPW's data traces, so
+    toggling a SPW off in the legend hides its shading/lines too (and
+    lets the x-axis autorange correctly to only the visible SPWs)
+    instead of every identified line's markers always being shown
+    regardless of which SPW is selected. A line with no SPW match (data
+    inconsistency) falls back to an ungrouped, always-visible band.
 
     Frequencies are computed with the plain radio-convention Doppler
     formula against the SPECTRAL_WINDOW frame the 'freq' column is
@@ -252,25 +260,36 @@ def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
         freq_at_vhigh = restfreq * (1 - float(vel_row['vhigh_kms']) / _C_KMS)
         freq_lo, freq_hi = sorted((freq_at_vlow, freq_at_vhigh))
 
-        fig.append_trace(go.Scattergl(
-            x=[freq_lo, freq_hi, freq_hi, freq_lo, freq_lo],
-            y=[y_lo, y_lo, y_hi, y_hi, y_lo],
-            mode='lines', fill='toself',
-            fillcolor='rgba(105,105,105,0.35)',
-            line=dict(width=0),
-            hoverinfo='skip', showlegend=False,
-        ), row=row, col=col)
+        # A line normally belongs to exactly one SPW; draw once per match
+        # in the rare case it's identified in more than one (e.g.
+        # overlapping SPW edges).
+        matching_spws = line_to_spw.get(vel_row['line'], [None])
 
-        for freq, vel in ((freq_at_vlow, vel_row['vlow_kms']), (freq_at_vhigh, vel_row['vhigh_kms'])):
+        for spw in matching_spws:
+
+            legendgroup = str(spw) if spw is not None else None
+
             fig.append_trace(go.Scattergl(
-                x=[freq] * len(y_line), y=y_line,
-                mode='lines',
-                line=dict(color='black', width=2.5),
-                hovertemplate=(f"Line: {vel_row['line']}<br>"
-                              f"Freq: {freq:.6f} GHz<br>"
-                              f"Velocity: {vel:.1f} km/s<extra></extra>"),
-                showlegend=False,
+                x=[freq_lo, freq_hi, freq_hi, freq_lo, freq_lo],
+                y=[y_lo, y_lo, y_hi, y_hi, y_lo],
+                mode='lines', fill='toself',
+                fillcolor='rgba(105,105,105,0.35)',
+                line=dict(width=0),
+                hoverinfo='skip', showlegend=False,
+                legendgroup=legendgroup,
             ), row=row, col=col)
+
+            for freq, vel in ((freq_at_vlow, vel_row['vlow_kms']), (freq_at_vhigh, vel_row['vhigh_kms'])):
+                fig.append_trace(go.Scattergl(
+                    x=[freq] * len(y_line), y=y_line,
+                    mode='lines',
+                    line=dict(color='black', width=2.5),
+                    hovertemplate=(f"Line: {vel_row['line']}<br>"
+                                  f"Freq: {freq:.6f} GHz<br>"
+                                  f"Velocity: {vel:.1f} km/s<extra></extra>"),
+                    showlegend=False,
+                    legendgroup=legendgroup,
+                ), row=row, col=col)
 
 
 def target_scan_figure(table_dict, meta_dict, show=False,
@@ -331,8 +350,18 @@ def target_scan_figure(table_dict, meta_dict, show=False,
         field_name = meta_dict['amp_time']['field']
         matching_rows = velocity_rows_for_field(velocity_table, field_name)
         if len(matching_rows) > 0:
+            # Which SPW(s) each identified line belongs to, so its shading
+            # can share that SPW's legendgroup (spw_dict labels are e.g.
+            # "OH1665-OH1667" for a SPW carrying both lines).
+            line_to_spw = {}
+            if spw_dict is not None:
+                for spw_id, info in spw_dict.items():
+                    for line_name in info['label'].split('-'):
+                        line_to_spw.setdefault(line_name, []).append(spw_id)
+
             row, col = row_col['amp_chan']
-            _add_line_velocity_shading(fig, row, col, table_dict['amp_chan'], matching_rows)
+            _add_line_velocity_shading(fig, row, col, table_dict['amp_chan'],
+                                       matching_rows, line_to_spw)
 
     fig.update_xaxes(rangeslider_visible=False,
                      tickformatstops=[dict(dtickrange=[None, 1000e3], value="%H:%M:%S"),
