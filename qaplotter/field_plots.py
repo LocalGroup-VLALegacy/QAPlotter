@@ -215,6 +215,15 @@ def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
     approximation already accepted elsewhere in ReductionPipeline (at
     most ~30 km/s against SPW bandwidths of several MHz or more), and is
     unavoidable here since QAPlotter has no MS access to do better.
+
+    Drawn as Scattergl traces (fill='toself' for the band, lines+markers
+    for the hoverable edges) rather than `add_vrect`/`add_shape`: shapes
+    are SVG and plotly.js composites the WebGL canvas used by the
+    Scattergl data traces above the SVG shape layer regardless of the
+    shape's declared `layer`, so a shape here would render invisibly
+    underneath the (often very dense) data points. Scattergl traces added
+    after the data traces draw on top of them within that same WebGL
+    layer, same as any other trace order.
     '''
 
     if len(velocity_rows) == 0:
@@ -236,12 +245,19 @@ def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows):
         # same formula as ReductionPipeline's lines_rest2obs.
         freq_at_vlow = restfreq * (1 - float(vel_row['vlow_kms']) / _C_KMS)
         freq_at_vhigh = restfreq * (1 - float(vel_row['vhigh_kms']) / _C_KMS)
+        freq_lo, freq_hi = sorted((freq_at_vlow, freq_at_vhigh))
 
-        fig.add_vrect(x0=min(freq_at_vlow, freq_at_vhigh), x1=max(freq_at_vlow, freq_at_vhigh),
-                      row=row, col=col, fillcolor='gray', opacity=0.25, line_width=0)
+        fig.append_trace(go.Scattergl(
+            x=[freq_lo, freq_hi, freq_hi, freq_lo, freq_lo],
+            y=[y_lo, y_lo, y_hi, y_hi, y_lo],
+            mode='lines', fill='toself',
+            fillcolor='rgba(105,105,105,0.35)',
+            line=dict(width=0),
+            hoverinfo='skip', showlegend=False,
+        ), row=row, col=col)
 
         for freq, vel in ((freq_at_vlow, vel_row['vlow_kms']), (freq_at_vhigh, vel_row['vhigh_kms'])):
-            fig.append_trace(go.Scatter(
+            fig.append_trace(go.Scattergl(
                 x=[freq] * len(y_line), y=y_line,
                 mode='lines+markers',
                 line=dict(color='dimgray', width=1.5, dash='dot'),
