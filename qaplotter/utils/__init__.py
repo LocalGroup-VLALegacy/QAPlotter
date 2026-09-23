@@ -8,4 +8,5 @@ from .read_data import (read_casa_txt, read_field_data_tables, read_bpcal_data_t
                         read_phasegaincal_data_tables)
 from .time_conversion import telescope_time_conversion, datetime_from_msname
 from .load_spwmapping import load_spwdict
+from .load_velocity_table import load_velocity_table, velocity_rows_for_field
 from .generate_obslog_link import generate_obslog_link

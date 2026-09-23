@@ -4,7 +4,9 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
 
-from .utils import telescope_time_conversion
+from .utils import telescope_time_conversion, velocity_rows_for_field
+
+_C_KMS = 299792458.0 / 1000.
 
 # Define a common set of markers to plot for different correlations
 # e.g. RR, LL, RL, LR
@@ -197,14 +199,123 @@ def _add_color_buttons(fig, colors_dict):
     fig.update_layout(updatemenus=[updatemenus], margin=dict(t=150))
 
 
+def _add_line_velocity_shading(fig, row, col, tab_data, velocity_rows, line_to_spw):
+    '''
+    Shade the protected velocity range for each identified spectral line
+    on a chan/freq-axis panel: a gray band between the low/high edges,
+    plus a hoverable vertical line at each edge showing its frequency and
+    Doppler velocity. A line with more than one disjoint velocity window,
+    or an SPW with more than one identified line (e.g. the OH 1665/1667
+    satellite lines both landing in the same window), gets one band per
+    row of `velocity_rows` -- so those show up as two separate bands.
+
+    `line_to_spw` (line name -> list of spw ids, from `spw_dict`) ties
+    each band to the same `legendgroup` as its SPW's data traces, so
+    toggling a SPW off in the legend hides its shading/lines too (and
+    lets the x-axis autorange correctly to only the visible SPWs)
+    instead of every identified line's markers always being shown
+    regardless of which SPW is selected. A line with no SPW match (data
+    inconsistency) falls back to an ungrouped, always-visible band.
+
+    Frequencies are computed with the plain radio-convention Doppler
+    formula against the SPECTRAL_WINDOW frame the 'freq' column is
+    already in (TOPO, typically); this is the same LSRK-vs-TOPO
+    approximation already accepted elsewhere in ReductionPipeline (at
+    most ~30 km/s against SPW bandwidths of several MHz or more), and is
+    unavoidable here since QAPlotter has no MS access to do better.
+
+    Drawn as Scattergl traces (fill='toself' for the band, lines+markers
+    for the hoverable edges), matching the data traces' rendering so
+    z-order follows normal trace-insertion order. A protected velocity
+    window is typically a few hundred kHz wide -- under a percent of the
+    panel's full multi-SPW frequency range -- so the *fill* is often
+    sub-pixel and effectively invisible at that zoomed-out view (this
+    isn't a rendering bug, just geometry: confirmed by rendering the
+    real figure with kaleido). The boundary lines are the reliable,
+    always-visible marker regardless of zoom (bold, solid, high-contrast,
+    and padded well past the data's y-range so they poke out above/below
+    the point cloud); the shaded fill becomes clearly visible once a
+    viewer zooms in on that specific line, which is normal, expected use
+    of an interactive plot.
+    '''
+
+    if len(velocity_rows) == 0:
+        return
+
+    amp = np.asarray(tab_data['amp'])
+    finite = amp[np.isfinite(amp)]
+    if len(finite) == 0:
+        return
+    y_lo, y_hi = float(finite.min()), float(finite.max())
+    pad = 0.15 * (y_hi - y_lo) if y_hi > y_lo else 1.0
+    # Amplitude is never negative -- don't pad below 0, so the shading
+    # doesn't force the y-axis to autorange into negative territory.
+    y_lo, y_hi = max(0.0, y_lo - pad), y_hi + pad
+    y_line = np.linspace(y_lo, y_hi, 5)
+
+    for vel_row in velocity_rows:
+
+        restfreq = float(vel_row['restfreq_GHz'])
+        # Higher velocity -> lower observed frequency (radio convention),
+        # same formula as ReductionPipeline's lines_rest2obs.
+        freq_at_vlow = restfreq * (1 - float(vel_row['vlow_kms']) / _C_KMS)
+        freq_at_vhigh = restfreq * (1 - float(vel_row['vhigh_kms']) / _C_KMS)
+        freq_lo, freq_hi = sorted((freq_at_vlow, freq_at_vhigh))
+
+        # A line normally belongs to exactly one SPW; draw once per match
+        # in the rare case it's identified in more than one (e.g.
+        # overlapping SPW edges).
+        matching_spws = line_to_spw.get(vel_row['line'], [None])
+
+        for spw in matching_spws:
+
+            legendgroup = str(spw) if spw is not None else None
+
+            fig.append_trace(go.Scattergl(
+                x=[freq_lo, freq_hi, freq_hi, freq_lo, freq_lo],
+                y=[y_lo, y_lo, y_hi, y_hi, y_lo],
+                mode='lines', fill='toself',
+                fillcolor='rgba(105,105,105,0.35)',
+                line=dict(width=0),
+                hoverinfo='skip', showlegend=False,
+                legendgroup=legendgroup,
+            ), row=row, col=col)
+
+            for freq, vel in ((freq_at_vlow, vel_row['vlow_kms']), (freq_at_vhigh, vel_row['vhigh_kms'])):
+                fig.append_trace(go.Scattergl(
+                    x=[freq] * len(y_line), y=y_line,
+                    mode='lines',
+                    line=dict(color='black', width=2.5),
+                    hovertemplate=(f"Line: {vel_row['line']}<br>"
+                                  f"Freq: {freq:.6f} GHz<br>"
+                                  f"Velocity: {vel:.1f} km/s<extra></extra>"),
+                    showlegend=False,
+                    legendgroup=legendgroup,
+                ), row=row, col=col)
+
+
 def target_scan_figure(table_dict, meta_dict, show=False,
                        scatter_plot=go.Scattergl,
                        corrs=['RR', 'LL'],
                        spw_dict=None,
                        show_linesonly=False,
-                       telescope='vla'):
+                       continuum_only=False,
+                       telescope='vla',
+                       velocity_table=None):
     '''
     Make a 3-panel figure for target scans.
+
+    `show_linesonly` and `continuum_only` are mutually exclusive SPW
+    filters (both need `spw_dict` to classify SPWs by their label; with
+    neither set, or without `spw_dict`, every SPW present in the data is
+    shown together). `make_field_plots` uses these to produce two
+    separate figures per target -- a line-SPW view and a continuum-only
+    view -- rather than one figure mixing both.
+
+    `velocity_table`, if given (see `qaplotter.utils.load_velocity_table`),
+    shades the protected velocity range of each spectral line identified
+    for this target on the Amp vs. Freq panel. Meaningless for a
+    continuum-only figure -- pass velocity_table=None there.
     '''
 
     exp_keys = ['amp_chan', 'amp_time', 'amp_uvdist']
@@ -219,30 +330,40 @@ def target_scan_figure(table_dict, meta_dict, show=False,
 
     spw_nums = np.unique(table_dict['amp_chan']['spw'].tolist())
 
-    # When requested, show lines only for mixed continuum/line data sets.
-    # SPWs are defined by their name when the spw_dict is passed.
-    # Lines do not have "continuum" in their name.
+    # SPWs are classified as continuum or line by their spw_dict label
+    # ("continuum" is only ever in a continuum SPW's label).
     spw_labels = {}
     if spw_dict is not None:
         for key in spw_dict:
-            if "continuum" in spw_dict[key]['label']:
-                continue
             spw_labels[key] = spw_dict[key]['label']
 
-    if show_linesonly and spw_dict is not None:
-        line_spw_nums = []
-        for key in spw_dict:
-            if "continuum" in spw_dict[key]['label']:
-                continue
-            if not key in spw_nums:
-                continue
-            line_spw_nums.append(key)
-
-        spw_nums = line_spw_nums
+    if continuum_only and spw_dict is not None:
+        spw_nums = [key for key in spw_dict
+                   if "continuum" in spw_dict[key]['label'] and key in spw_nums]
+    elif show_linesonly and spw_dict is not None:
+        spw_nums = [key for key in spw_dict
+                   if "continuum" not in spw_dict[key]['label'] and key in spw_nums]
 
     colors_dict = _add_scan_traces(fig, exp_keys, table_dict, spw_nums, corrs,
                                    spw_labels, lambda key: row_col[key], telescope,
                                    first_trace_flag=lambda nn, nspw, nc: (nn == 0 and nc == 0))
+
+    if velocity_table is not None and len(velocity_table) > 0:
+        field_name = meta_dict['amp_time']['field']
+        matching_rows = velocity_rows_for_field(velocity_table, field_name)
+        if len(matching_rows) > 0:
+            # Which SPW(s) each identified line belongs to, so its shading
+            # can share that SPW's legendgroup (spw_dict labels are e.g.
+            # "OH1665-OH1667" for a SPW carrying both lines).
+            line_to_spw = {}
+            if spw_dict is not None:
+                for spw_id, info in spw_dict.items():
+                    for line_name in info['label'].split('-'):
+                        line_to_spw.setdefault(line_name, []).append(spw_id)
+
+            row, col = row_col['amp_chan']
+            _add_line_velocity_shading(fig, row, col, table_dict['amp_chan'],
+                                       matching_rows, line_to_spw)
 
     fig.update_xaxes(rangeslider_visible=False,
                      tickformatstops=[dict(dtickrange=[None, 1000e3], value="%H:%M:%S"),
