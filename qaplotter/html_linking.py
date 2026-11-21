@@ -88,7 +88,8 @@ def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None,
     html_string += f'<h3>Manual flagging commands check</h3>\n'
     if manualflag_tablename is not None:
         html_string += '\n'
-        html_string += f'<iframe src="{manualflag_tablename}" height="30%" width=90%>\n'
+        # Explicit pixel height: a percentage height resolves against an auto-height parent.
+        html_string += f'<iframe src="{manualflag_tablename}" height="200" width="100%">\n'
         html_string += 'If you are seeing this, you need a browser understands IFrames.\n'
         html_string += '</iframe>\n'
     else:
@@ -98,7 +99,7 @@ def make_index_html_homepage(folder, ms_info_dict, flagging_sheet_link=None,
     # Embed the weblog into the main page.
 
     html_string += '\n'
-    html_string += '<iframe src="weblog/html/index.html" height="100%" width=90%>\n'
+    html_string += '<iframe src="weblog/html/index.html" height="1000" width="100%">\n'
     html_string += 'If you are seeing this, you need a browser understands IFrames.\n'
     html_string += '</iframe>\n'
 
@@ -369,13 +370,18 @@ div.content {
 
 def make_html_preamble():
 
+    # The CSS is embedded rather than linked as qa_plot.css. Some hosts (e.g. the CANFAR
+    # /arc/files service) serve .css as text/plain, and browsers then refuse to apply a
+    # linked stylesheet. An inline <style> does not depend on the server's MIME types.
     html_preamble_string = \
-'''
+f'''
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" type="text/css" href="qa_plot.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+{css_page_style()}</style>
 </head>
 <body>\n\n
 '''
